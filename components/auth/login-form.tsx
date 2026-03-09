@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Mail, Lock, Loader2, AlertCircle } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
-export function LoginForm() {
+export function LoginForm({ redirectTo = "/dashboard" }: { redirectTo?: string }) {
     const router = useRouter()
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
@@ -29,7 +29,7 @@ export function LoginForm() {
 
             if (error) throw error
 
-            router.push("/dashboard")
+            router.push(redirectTo)
             router.refresh()
         } catch (err: any) {
             setError(err.message || "Failed to sign in. Please check your credentials.")

@@ -1,17 +1,32 @@
 "use client"
 
-import { useState } from "react"
+import { useState, Suspense } from "react"
 import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Shield, ArrowLeft, Github, Chrome } from "lucide-react"
+import { Shield, ArrowLeft, Github, Chrome, Loader2 } from "lucide-react"
 import { LoginForm } from "@/components/auth/login-form"
 import { SignUpForm } from "@/components/auth/sign-up-form"
 
 export default function AuthPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+        }>
+            <AuthContent />
+        </Suspense>
+    )
+}
+
+function AuthContent() {
     const [activeTab, setActiveTab] = useState("login")
+    const searchParams = useSearchParams()
+    const redirectTo = searchParams.get("next") || "/dashboard"
 
     return (
         <div className="min-h-screen relative flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 overflow-hidden bg-background">
@@ -121,7 +136,7 @@ export default function AuthPage() {
                                                     </div>
                                                 </div>
 
-                                                {activeTab === "login" ? <LoginForm /> : <SignUpForm />}
+                                                {activeTab === "login" ? <LoginForm redirectTo={redirectTo} /> : <SignUpForm redirectTo={redirectTo} />}
                                             </CardContent>
                                         </motion.div>
                                     </TabsContent>

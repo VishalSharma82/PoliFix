@@ -1,12 +1,17 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
-import { Search, Bell, User, ChevronDown, Settings, LogOut, MapPin } from "lucide-react"
+import { Search, Bell, User, ChevronDown, Settings, LogOut, MapPin, Loader2 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { supabase } from "@/lib/supabase"
+import { Database } from "@/types/database"
+
+type Profile = Database["public"]["Tables"]["profiles"]["Row"]
 
 const notifications = [
   { id: 1, title: "Your report was verified", description: "Pothole on Main St got 5 verifications", time: "2 min ago", unread: true },
@@ -15,8 +20,37 @@ const notifications = [
 ]
 
 export function DashboardHeader() {
+  const router = useRouter()
   const [showNotifications, setShowNotifications] = useState(false)
   const [showProfile, setShowProfile] = useState(false)
+  const [profile, setProfile] = useState<Profile | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function getProfile() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const { data } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single()
+
+        if (data) setProfile(data)
+      }
+      setLoading(false)
+    }
+    getProfile()
+  }, [])
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut()
+    router.push("/login")
+  }
+
+  const userInitials = profile?.full_name
+    ? profile.full_name.split(' ').map(n => n[0]).join('').toUpperCase()
+    : 'U'
 
   return (
     <header className="h-16 bg-background border-b px-4 lg:px-6 flex items-center justify-between gap-4">
@@ -107,14 +141,25 @@ export function DashboardHeader() {
               setShowProfile(!showProfile)
               setShowNotifications(false)
             }}
-            className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-muted transition-colors"
+            className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-muted transition-colors disabled:opacity-50"
+            disabled={loading}
           >
             <Avatar className="w-8 h-8">
-              <AvatarFallback className="bg-primary text-white text-sm">JD</AvatarFallback>
+              {profile?.avatar_url ? (
+                <img src={profile.avatar_url} alt={profile.full_name || 'User'} className="object-cover" />
+              ) : (
+                <AvatarFallback className="bg-primary text-white text-sm">
+                  {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : userInitials}
+                </AvatarFallback>
+              )}
             </Avatar>
             <div className="hidden sm:block text-left">
-              <p className="text-sm font-medium leading-none">John Doe</p>
-              <p className="text-xs text-muted-foreground">Civic Champion</p>
+              <p className="text-sm font-medium leading-none truncate max-w-[100px]">
+                {loading ? 'Loading...' : (profile?.full_name || 'User')}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {profile?.reputation_points ? `${profile.reputation_points} Points` : 'Citizen'}
+              </p>
             </div>
             <ChevronDown className="w-4 h-4 text-muted-foreground hidden sm:block" />
           </button>
@@ -129,13 +174,14 @@ export function DashboardHeader() {
                 className="absolute right-0 top-full mt-2 w-56 bg-background rounded-xl border shadow-lg overflow-hidden z-50"
               >
                 <div className="p-4 border-b">
-                  <p className="font-medium">John Doe</p>
-                  <p className="text-sm text-muted-foreground">john@example.com</p>
+                  <p className="font-medium truncate">{profile?.full_name || 'Citizen'}</p>
+                  <p className="text-sm text-muted-foreground truncate opacity-70">Member since {profile?.created_at ? new Date(profile.created_at).getFullYear() : '2024'}</p>
                 </div>
                 <div className="p-2">
                   <Link
                     href="/dashboard/profile"
                     className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted transition-colors"
+                    onClick={() => setShowProfile(false)}
                   >
                     <User className="w-4 h-4" />
                     <span className="text-sm">View Profile</span>
@@ -143,19 +189,20 @@ export function DashboardHeader() {
                   <Link
                     href="/dashboard/settings"
                     className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted transition-colors"
+                    onClick={() => setShowProfile(false)}
                   >
                     <Settings className="w-4 h-4" />
                     <span className="text-sm">Settings</span>
                   </Link>
                 </div>
                 <div className="p-2 border-t">
-                  <Link
-                    href="/"
-                    className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-destructive/10 text-destructive transition-colors"
+                  <button
+                    onClick={handleSignOut}
+                    className="flex w-full items-center gap-3 px-3 py-2 rounded-lg hover:bg-destructive/10 text-destructive transition-colors"
                   >
                     <LogOut className="w-4 h-4" />
                     <span className="text-sm">Log out</span>
-                  </Link>
+                  </button>
                 </div>
               </motion.div>
             )}

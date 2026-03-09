@@ -1,10 +1,23 @@
 "use client"
 import { useEffect, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { MapPin, X, ThumbsUp, MessageCircle, Navigation, Loader2 } from "lucide-react"
+import { MapPin, X, ThumbsUp, Navigation, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { supabase } from "@/lib/supabase"
 import { Database } from "@/types/database"
+import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet"
+import L from "leaflet"
+
+// Fix for default marker icons in Leaflet with Next.js
+const defaultIcon = L.icon({
+  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+})
 
 type Problem = Database["public"]["Tables"]["problems"]["Row"]
 
@@ -16,10 +29,19 @@ const statusColors: Record<string, string> = {
   resolved: "bg-green-500",
 }
 
+function MapResizer() {
+  const map = useMap()
+  useEffect(() => {
+    setTimeout(() => {
+      map.invalidateSize()
+    }, 100)
+  }, [map])
+  return null
+}
+
 export function InteractiveMap() {
   const [problems, setProblems] = useState<Problem[]>([])
   const [selectedMarker, setSelectedMarker] = useState<Problem | null>(null)
-  const [hoveredMarker, setHoveredMarker] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -28,7 +50,7 @@ export function InteractiveMap() {
         .from('problems')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(20)
+        .limit(50)
 
       if (data) setProblems(data)
       setLoading(false)
@@ -49,99 +71,62 @@ export function InteractiveMap() {
     }
   }, [])
 
-  // Simple coordinate to percentage mapping for the simulated map
-  // This is a placeholder until a real map like Leaflet is integrated
-  const getPosition = (lat: number, lng: number) => {
-    // Relative to a specific area/city center
-    const baseLat = 12.9716
-    const baseLng = 77.5946
-    const scale = 500 // Adjust based on how wide the "simulated area" is
-
-    return {
-      x: 50 + (lng - baseLng) * scale,
-      y: 50 - (lat - baseLat) * scale,
-    }
-  }
-
   if (loading) {
     return (
-      <div className="h-80 flex items-center justify-center bg-muted/20">
+      <div className="h-[400px] flex items-center justify-center bg-muted/20 rounded-[2rem] border">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     )
   }
 
+  // Default center (Bangalore as in the original code, or a dynamic one)
+  const defaultCenter: [number, number] = [12.9716, 77.5946]
+
   return (
-    <div className="relative h-80 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-slate-900 dark:to-slate-800 overflow-hidden">
-      {/* Grid pattern */}
-      <svg className="absolute inset-0 w-full h-full opacity-20" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="currentColor" strokeWidth="0.5" className="text-primary" />
-          </pattern>
-        </defs>
-        <rect width="100%" height="100%" fill="url(#grid)" />
-      </svg>
+    <div className="relative h-[400px] rounded-[2rem] overflow-hidden border shadow-xl z-0">
+      <MapContainer
+        center={defaultCenter}
+        zoom={13}
+        scrollWheelZoom={false}
+        className="h-full w-full"
+      >
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        <MapResizer />
 
-      {/* Simulated roads */}
-      <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
-        <path d="M 0 160 Q 200 140, 400 160 T 800 150" stroke="currentColor" strokeWidth="3" fill="none" className="text-muted-foreground/30" />
-        <path d="M 200 0 Q 180 160, 200 320" stroke="currentColor" strokeWidth="3" fill="none" className="text-muted-foreground/30" />
-        <path d="M 400 0 Q 420 160, 400 320" stroke="currentColor" strokeWidth="3" fill="none" className="text-muted-foreground/30" />
-      </svg>
-
-      {/* Markers */}
-      {problems.map((marker) => {
-        const { x, y } = getPosition(marker.lat, marker.lng)
-        return (
-          <motion.button
-            key={marker.id}
-            className="absolute -translate-x-1/2 -translate-y-1/2 z-10"
-            style={{ left: `${x}%`, top: `${y}%` }}
-            whileHover={{ scale: 1.2 }}
-            whileTap={{ scale: 0.95 }}
-            onHoverStart={() => setHoveredMarker(marker.id)}
-            onHoverEnd={() => setHoveredMarker(null)}
-            onClick={() => setSelectedMarker(marker)}
+        {problems.map((problem) => (
+          <Marker
+            key={problem.id}
+            position={[problem.lat, problem.lng]}
+            icon={defaultIcon}
+            eventHandlers={{
+              click: () => setSelectedMarker(problem),
+            }}
           >
-            <div className="relative">
-              <div className={`w-8 h-8 rounded-full ${statusColors[marker.status] || "bg-primary"} flex items-center justify-center shadow-lg border-2 border-white`}>
-                <MapPin className="w-4 h-4 text-white" />
+            <Popup>
+              <div className="p-1">
+                <h3 className="font-bold text-sm mb-1">{problem.title}</h3>
+                <p className="text-xs text-muted-foreground mb-2 capitalize">{problem.category.replace('_', ' ')}</p>
+                <div className="flex items-center gap-2">
+                  <span className={`w-2 h-2 rounded-full ${statusColors[problem.status]}`} />
+                  <span className="text-[10px] font-bold uppercase">{problem.status}</span>
+                </div>
               </div>
-              {marker.status === "reported" && (
-                <motion.div
-                  className={`absolute inset-0 rounded-full ${statusColors[marker.status]}`}
-                  animate={{ scale: [1, 2, 1], opacity: [0.5, 0, 0.5] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                />
-              )}
-            </div>
+            </Popup>
+          </Marker>
+        ))}
+      </MapContainer>
 
-            {/* Hover tooltip */}
-            <AnimatePresence>
-              {hoveredMarker === marker.id && (
-                <motion.div
-                  initial={{ opacity: 0, y: 5 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 5 }}
-                  className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 px-3 py-1.5 bg-foreground text-background text-xs rounded-lg whitespace-nowrap shadow-lg z-50 font-bold"
-                >
-                  {marker.title}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.button>
-        )
-      })}
-
-      {/* Selected marker popup */}
+      {/* Selected marker overlay */}
       <AnimatePresence>
         {selectedMarker && (
           <motion.div
             initial={{ opacity: 0, scale: 0.9, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 10 }}
-            className="absolute bottom-4 left-4 right-4 bg-background/95 backdrop-blur-md rounded-2xl shadow-2xl border p-4 z-20"
+            className="absolute bottom-4 left-4 right-4 bg-background/95 backdrop-blur-md rounded-2xl shadow-2xl border p-4 z-[1000]"
           >
             <button
               onClick={() => setSelectedMarker(null)}
@@ -185,7 +170,7 @@ export function InteractiveMap() {
       </AnimatePresence>
 
       {/* Legend */}
-      <div className="absolute top-4 right-4 bg-background/80 backdrop-blur-md rounded-2xl p-4 border shadow-xl">
+      <div className="absolute top-4 right-4 bg-background/80 backdrop-blur-md rounded-2xl p-4 border shadow-xl z-[1000]">
         <p className="text-[10px] font-black text-foreground uppercase tracking-widest mb-3">Live Status</p>
         <div className="space-y-2">
           {Object.entries(statusColors).map(([status, color]) => (

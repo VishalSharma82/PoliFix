@@ -7,6 +7,7 @@ import {
   MapPin,
   ThumbsUp,
   MessageCircle,
+  MessageSquare,
   CheckCircle2,
   Clock,
   AlertTriangle,
@@ -73,48 +74,48 @@ export default function ActivityPage() {
       // Combine and format
       const combined: Activity[] = []
 
-      reports?.forEach(r => {
-        combined.push({
-          id: `report-${r.id}`,
-          type: r.status === 'resolved' ? 'resolve' : 'report',
-          user: { name: r.profiles?.full_name || 'Citizen', initials: r.profiles?.full_name?.[0] || 'C' },
-          action: r.status === 'resolved' ? "resolved the issue" : "reported a new problem",
-          problem: { id: r.id, title: r.title },
-          time: new Date(r.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          timestamp: r.created_at,
-          icon: r.status === 'resolved' ? CheckCircle2 : AlertTriangle,
-          color: r.status === 'resolved' ? "bg-green-500" : "bg-accent"
+        ; (reports as any)?.forEach((r: any) => {
+          combined.push({
+            id: `report-${r.id}`,
+            type: r.status === 'resolved' ? 'resolve' : 'report',
+            user: { name: r.profiles?.full_name || 'Citizen', initials: r.profiles?.full_name?.[0] || 'C' },
+            action: r.status === 'resolved' ? "resolved the issue" : "reported a new problem",
+            problem: { id: r.id, title: r.title },
+            time: new Date(r.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            timestamp: r.created_at,
+            icon: r.status === 'resolved' ? CheckCircle2 : AlertTriangle,
+            color: r.status === 'resolved' ? "bg-green-500" : "bg-accent"
+          })
         })
-      })
 
-      verifications?.forEach(v => {
-        combined.push({
-          id: `verify-${v.id}`,
-          type: "verify",
-          user: { name: v.profiles?.full_name || 'Citizen', initials: v.profiles?.full_name?.[0] || 'C' },
-          action: "verified",
-          problem: { id: v.problems?.id || '', title: v.problems?.title || '' },
-          time: new Date(v.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          timestamp: v.created_at,
-          icon: ThumbsUp,
-          color: "bg-primary"
+        ; (verifications as any)?.forEach((v: any) => {
+          combined.push({
+            id: `verify-${v.id}`,
+            type: "verify",
+            user: { name: v.profiles?.full_name || 'Citizen', initials: v.profiles?.full_name?.[0] || 'C' },
+            action: "verified",
+            problem: { id: v.problems?.id || '', title: v.problems?.title || '' },
+            time: new Date(v.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            timestamp: v.created_at,
+            icon: ThumbsUp,
+            color: "bg-primary"
+          })
         })
-      })
 
-      comments?.forEach(c => {
-        combined.push({
-          id: `comment-${c.id}`,
-          type: "comment",
-          user: { name: c.profiles?.full_name || 'Citizen', initials: c.profiles?.full_name?.[0] || 'C' },
-          action: "commented on",
-          problem: { id: c.problems?.id || '', title: c.problems?.title || '' },
-          comment: c.content,
-          time: new Date(c.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          timestamp: c.created_at,
-          icon: MessageCircle,
-          color: "bg-blue-500"
+        ; (comments as any)?.forEach((c: any) => {
+          combined.push({
+            id: `comment-${c.id}`,
+            type: "comment",
+            user: { name: c.profiles?.full_name || 'Citizen', initials: c.profiles?.full_name?.[0] || 'C' },
+            action: "commented on",
+            problem: { id: c.problems?.id || '', title: c.problems?.title || '' },
+            comment: c.content,
+            time: new Date(c.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            timestamp: c.created_at,
+            icon: MessageSquare,
+            color: "bg-blue-500"
+          })
         })
-      })
 
       setActivities(combined.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()))
 
@@ -124,7 +125,11 @@ export default function ActivityPage() {
         .select('*')
         .order('confirmed_count', { ascending: false })
         .limit(4)
-      setTrending(trendData || [])
+
+      const trendingWithBoost = (trendData || []).map((item: any) => {
+        return { ...(item || {}), boost: Math.floor(Math.random() * 50) + 10 }
+      })
+      setTrending(trendingWithBoost)
 
       // Fetch Recently Resolved
       const { data: resData } = await supabase
@@ -301,7 +306,7 @@ export default function ActivityPage() {
                       {problem.confirmed_count} Verified Citizens
                     </p>
                   </div>
-                  <span className="text-[10px] text-green-600 font-black uppercase bg-green-500/10 px-2 py-1 rounded-md">+{Math.floor(Math.random() * 20)}</span>
+                  <span className="text-[10px] text-green-600 font-black uppercase bg-green-500/10 px-2 py-1 rounded-md">+{problem.boost}</span>
                 </Link>
               ))}
             </CardContent>

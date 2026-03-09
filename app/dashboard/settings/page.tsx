@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import {
   User,
@@ -15,6 +16,8 @@ import {
   EyeOff,
   Save,
   Camera,
+  Loader2,
+  Check,
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -24,16 +27,87 @@ import { Switch } from "@/components/ui/switch"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { supabase } from "@/lib/supabase"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 export default function SettingsPage() {
+  const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
+  const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState({
-    name: "John Doe",
-    email: "john.doe@example.com",
-    phone: "+1 (555) 123-4567",
-    bio: "Passionate about making my community better.",
-    location: "San Francisco, CA",
+    name: "",
+    email: "",
+    phone: "",
+    bio: "",
+    location: "",
   })
+
+  useEffect(() => {
+    async function fetchSettings() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        router.push("/login")
+        return
+      }
+      setUser(user)
+
+      const { data: profileData } = await (supabase
+        .from('profiles') as any)
+        .select('*')
+        .eq('id', user.id)
+        .single()
+
+      if (profileData) {
+        setProfile({
+          name: profileData.full_name || "",
+          email: user.email || "",
+          phone: "",
+          bio: profileData.bio || "",
+          location: profileData.location || "",
+        })
+      }
+      setLoading(false)
+    }
+    fetchSettings()
+  }, [router])
+
+  const handleSave = async () => {
+    setSaving(true)
+    setError(null)
+    setSuccess(false)
+
+    try {
+      const { error: upsertError } = await (supabase
+        .from('profiles') as any)
+        .upsert({
+          id: user.id,
+          full_name: profile.name,
+          bio: profile.bio,
+          location: profile.location,
+          updated_at: new Date().toISOString(),
+        })
+
+      if (upsertError) throw upsertError
+      setSuccess(true)
+      setTimeout(() => setSuccess(false), 3000)
+    } catch (err: any) {
+      setError(err.message || "Failed to save settings")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="h-[60vh] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -42,6 +116,15 @@ export default function SettingsPage() {
         <h1 className="text-2xl font-bold text-foreground">Settings</h1>
         <p className="text-muted-foreground">Manage your account preferences</p>
       </div>
+
+      {(error || success) && (
+        <Alert variant={success ? "default" : "destructive"} className={success ? "border-green-500/50 bg-green-500/10 text-green-600" : ""}>
+          <AlertDescription className="flex items-center gap-2">
+            {success && <Check className="w-4 h-4" />}
+            {error || "Changes saved successfully!"}
+          </AlertDescription>
+        </Alert>
+      )}
 
       <Tabs defaultValue="profile" className="space-y-6">
         <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:w-auto lg:inline-grid">
@@ -75,7 +158,9 @@ export default function SettingsPage() {
                 <div className="flex items-center gap-6">
                   <div className="relative">
                     <Avatar className="w-24 h-24">
-                      <AvatarFallback className="bg-primary text-white text-2xl">JD</AvatarFallback>
+                      <AvatarFallback className="bg-primary text-white text-2xl">
+                        {profile.name?.charAt(0) || user?.email?.charAt(0).toUpperCase()}
+                      </AvatarFallback>
                     </Avatar>
                     <button className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center shadow-lg hover:bg-primary/90 transition-colors">
                       <Camera className="w-4 h-4" />
@@ -109,7 +194,8 @@ export default function SettingsPage() {
                     <Input
                       type="email"
                       value={profile.email}
-                      onChange={(e) => setProfile({ ...profile, email: e.target.value })}
+                      disabled
+                      className="opacity-70 cursor-not-allowed"
                     />
                   </div>
                 </div>
@@ -137,9 +223,9 @@ export default function SettingsPage() {
                     rows={3}
                   />
                 </div>
-                <Button>
-                  <Save className="w-4 h-4 mr-2" />
-                  Save Changes
+                <Button onClick={handleSave} disabled={saving}>
+                  {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                  {saving ? "Saving..." : "Save Changes"}
                 </Button>
               </CardContent>
             </Card>
@@ -174,7 +260,7 @@ export default function SettingsPage() {
                     <Input type="password" placeholder="Confirm new password" />
                   </div>
                 </div>
-                <Button>Update Password</Button>
+                <Button disabled>Update Password (Internal Auth only)</Button>
               </CardContent>
             </Card>
           </div>

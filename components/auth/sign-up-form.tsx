@@ -10,7 +10,7 @@ import { Mail, Lock, User, Loader2, AlertCircle, CheckCircle2 } from "lucide-rea
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import Link from "next/link"
 
-export function SignUpForm() {
+export function SignUpForm({ redirectTo = "/dashboard" }: { redirectTo?: string }) {
     const router = useRouter()
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")

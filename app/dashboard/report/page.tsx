@@ -1,12 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   AlertCircle,
   MapPin,
   Camera,
-  Upload,
   X,
   Check,
   ChevronRight,
@@ -28,6 +27,19 @@ import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
 import Link from "next/link"
 import { supabase } from "@/lib/supabase"
 import { Database } from "@/types/database"
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from "react-leaflet"
+import L from "leaflet"
+
+// Fix for default marker icons in Leaflet with Next.js
+const defaultIcon = L.icon({
+  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+})
 
 type ProblemCategory = Database["public"]["Tables"]["problems"]["Row"]["category"]
 type ProblemSeverity = Database["public"]["Tables"]["problems"]["Row"]["severity"]
@@ -48,6 +60,43 @@ const urgencyLevels: { id: ProblemSeverity; label: string; description: string; 
   { id: "critical", label: "Critical", description: "Emergency action required", color: "border-critical bg-critical/10 text-critical" },
 ]
 
+function MapResizer() {
+  const map = useMap()
+  useEffect(() => {
+    setTimeout(() => {
+      map.invalidateSize()
+    }, 100)
+  }, [map])
+  return null
+}
+
+function LocationMarker({ position, setPosition }: { position: [number, number], setPosition: (p: [number, number]) => void }) {
+  const map = useMap()
+
+  useMapEvents({
+    click(e) {
+      setPosition([e.latlng.lat, e.latlng.lng])
+      map.flyTo(e.latlng, map.getZoom())
+    },
+  })
+
+  return position ? (
+    <Marker
+      position={position}
+      interactive={true}
+      draggable={true}
+      icon={defaultIcon}
+      eventHandlers={{
+        dragend: (e) => {
+          const marker = e.target
+          const newPos = marker.getLatLng()
+          setPosition([newPos.lat, newPos.lng])
+        }
+      }}
+    />
+  ) : null
+}
+
 export default function ReportPage() {
   const [step, setStep] = useState(1)
   const [formData, setFormData] = useState({
@@ -64,6 +113,7 @@ export default function ReportPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isDetectingLocation, setIsDetectingLocation] = useState(false)
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
@@ -85,6 +135,40 @@ export default function ReportPage() {
     }))
   }
 
+  const fetchAddress = async (lat: number, lng: number) => {
+    try {
+      const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
+      const data = await response.json()
+      if (data && data.display_name) {
+        setFormData(prev => ({ ...prev, address: data.display_name }))
+      }
+    } catch (err) {
+      console.error("Failed to fetch address:", err)
+    }
+  }
+
+  const handleDetectLocation = () => {
+    setIsDetectingLocation(true)
+    if (!navigator.geolocation) {
+      setError("Geolocation is not supported by your browser")
+      setIsDetectingLocation(false)
+      return
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords
+        setFormData(prev => ({ ...prev, lat: latitude, lng: longitude }))
+        await fetchAddress(latitude, longitude)
+        setIsDetectingLocation(false)
+      },
+      (err) => {
+        setError("Unable to retrieve your location")
+        setIsDetectingLocation(false)
+      }
+    )
+  }
+
   const handleSubmit = async () => {
     setIsSubmitting(true)
     setError(null)
@@ -100,7 +184,7 @@ export default function ReportPage() {
         const fileName = `${Math.random()}.${fileExt}`
         const filePath = `${user.id}/${fileName}`
 
-        const { error: uploadError, data } = await supabase.storage
+        const { error: uploadError } = await supabase.storage
           .from('problem-images')
           .upload(filePath, file)
 
@@ -131,7 +215,12 @@ export default function ReportPage() {
 
       setSubmitted(true)
     } catch (err: any) {
-      setError(err.message || "Failed to submit report. Please try again.")
+      // Check if it's an RLS error
+      if (err.message?.includes("row-level security")) {
+        setError("Submission blocked by security policy. Please ask the administrator to enable 'Insert' permissions for the 'problems' table.")
+      } else {
+        setError(err.message || "Failed to submit report. Please try again.")
+      }
     } finally {
       setIsSubmitting(false)
     }
@@ -229,10 +318,10 @@ export default function ReportPage() {
           <div key={s} className="flex-1 flex items-center gap-3">
             <motion.div
               className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-black transition-all ${s < step
-                  ? "bg-primary text-white shadow-lg shadow-primary/20"
-                  : s === step
-                    ? "bg-primary text-white shadow-xl shadow-primary/40 ring-4 ring-primary/10"
-                    : "bg-muted text-muted-foreground"
+                ? "bg-primary text-white shadow-lg shadow-primary/20"
+                : s === step
+                  ? "bg-primary text-white shadow-xl shadow-primary/40 ring-4 ring-primary/10"
+                  : "bg-muted text-muted-foreground"
                 }`}
               animate={{ scale: s === step ? 1.05 : 1 }}
             >
@@ -272,8 +361,8 @@ export default function ReportPage() {
                       key={category.id}
                       onClick={() => setFormData({ ...formData, category: category.id })}
                       className={`group p-6 rounded-3xl border-2 transition-all duration-300 flex flex-col items-center gap-4 ${formData.category === category.id
-                          ? "border-primary bg-primary/10 shadow-lg shadow-primary/5"
-                          : "border-transparent bg-muted/30 hover:bg-muted/60 hover:scale-[1.02]"
+                        ? "border-primary bg-primary/10 shadow-lg shadow-primary/5"
+                        : "border-transparent bg-muted/30 hover:bg-muted/60 hover:scale-[1.02]"
                         }`}
                     >
                       <div className={`w-16 h-16 rounded-2xl ${category.color} flex items-center justify-center shadow-lg transition-transform group-hover:scale-110 group-hover:rotate-3`}>
@@ -375,33 +464,38 @@ export default function ReportPage() {
                   </div>
                 </div>
 
-                <Button variant="secondary" className="w-full h-14 rounded-2xl font-bold text-lg gap-3 shadow-lg shadow-primary/5">
-                  <Navigation className="w-5 h-5" />
+                <Button
+                  variant="secondary"
+                  className="w-full h-14 rounded-2xl font-bold text-lg gap-3 shadow-lg shadow-primary/5"
+                  onClick={handleDetectLocation}
+                  disabled={isDetectingLocation}
+                >
+                  {isDetectingLocation ? <Loader2 className="w-5 h-5 animate-spin" /> : <Navigation className="w-5 h-5" />}
                   Detect Current Location
                 </Button>
 
-                <div className="h-80 rounded-[2rem] bg-gradient-to-br from-primary/5 to-accent/5 relative overflow-hidden border border-border/20 shadow-inner">
-                  {/* Grid pattern */}
-                  <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+                <div className="h-80 rounded-[2rem] relative overflow-hidden border border-border/20 shadow-inner z-0">
+                  <MapContainer
+                    center={[formData.lat, formData.lng]}
+                    zoom={15}
+                    className="h-full w-full"
+                  >
+                    <TileLayer
+                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    />
+                    <MapResizer />
+                    <LocationMarker
+                      position={[formData.lat, formData.lng]}
+                      setPosition={(p) => {
+                        setFormData(prev => ({ ...prev, lat: p[0], lng: p[1] }))
+                        fetchAddress(p[0], p[1])
+                      }}
+                    />
+                  </MapContainer>
 
-                  {/* Mock Map UI */}
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="relative">
-                      <motion.div
-                        animate={{ y: [0, -12, 0] }}
-                        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                        className="relative z-10"
-                      >
-                        <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center shadow-2xl ring-4 ring-white/20">
-                          <MapPin className="w-6 h-6 text-white" />
-                        </div>
-                      </motion.div>
-                      <div className="w-6 h-2 rounded-full bg-black/20 blur-[2px] mx-auto mt-1 animate-pulse" />
-                    </div>
-                  </div>
-
-                  <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-background/80 backdrop-blur-md px-6 py-2 rounded-full border border-border/40 shadow-xl">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Drag to pin exact location</p>
+                  <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-background/80 backdrop-blur-md px-6 py-2 rounded-full border border-border/40 shadow-xl z-[1000] pointer-events-none">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Click to move or drag the pin</p>
                   </div>
                 </div>
               </CardContent>

@@ -2,11 +2,33 @@
 
 import Link from "next/link"
 import { motion } from "framer-motion"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { supabase } from "@/lib/supabase"
 import { ArrowRight, MapPin, CheckCircle2, Users, Zap } from "lucide-react"
 
 export function LandingHero() {
+  const [particles, setParticles] = useState<any[]>([])
+  const [user, setUser] = useState<any>(null)
+
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      setUser(user)
+    }
+    getUser()
+
+    setParticles([...Array(6)].map((_, i) => ({
+      id: i,
+      x: Math.random() * 50 - 25,
+      duration: 5 + Math.random() * 5,
+      delay: Math.random() * 5,
+      left: `${Math.random() * 100}%`,
+      top: `${Math.random() * 100}%`,
+    })))
+  }, [])
+
   return (
     <section className="relative overflow-hidden pt-32 pb-20 lg:pt-48 lg:pb-32">
       {/* Background decorations - More dynamic */}
@@ -16,23 +38,23 @@ export function LandingHero() {
 
       {/* Floating particles simulation */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-30">
-        {[...Array(6)].map((_, i) => (
+        {particles.map((p) => (
           <motion.div
-            key={i}
+            key={p.id}
             className="absolute h-2 w-2 rounded-full bg-primary/20"
             animate={{
               y: [0, -100, 0],
-              x: [0, Math.random() * 50 - 25, 0],
+              x: [0, p.x, 0],
               opacity: [0, 1, 0],
             }}
             transition={{
-              duration: 5 + Math.random() * 5,
+              duration: p.duration,
               repeat: Infinity,
-              delay: Math.random() * 5,
+              delay: p.delay,
             }}
             style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
+              left: p.left,
+              top: p.top,
             }}
           />
         ))}
@@ -70,14 +92,14 @@ export function LandingHero() {
 
             <div className="flex flex-col sm:flex-row gap-4">
               <Button size="lg" asChild className="h-14 px-8 text-lg font-semibold gap-2 group shadow-xl shadow-primary/20 transition-all hover:shadow-primary/30 active:scale-95">
-                <Link href="/dashboard/report">
+                <Link href={user ? "/dashboard/report" : "/auth?next=/dashboard/report"}>
                   <MapPin className="h-5 w-5" />
                   Report a Problem
                   <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
                 </Link>
               </Button>
               <Button size="lg" variant="outline" asChild className="h-14 px-8 text-lg font-semibold backdrop-blur-sm border-primary/20 hover:bg-primary/5 transition-all">
-                <Link href="/dashboard">Explore Map Live</Link>
+                <Link href={user ? "/dashboard" : "/auth?next=/dashboard"}>Explore Map Live</Link>
               </Button>
             </div>
 

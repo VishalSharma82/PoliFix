@@ -3,10 +3,20 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { MapPin, Menu, X } from "lucide-react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { supabase } from "@/lib/supabase"
 
 export function LandingNav() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [user, setUser] = useState<any>(null)
+
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      setUser(user)
+    }
+    getUser()
+  }, [])
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 glass border-b border-border/50">
@@ -47,12 +57,20 @@ export function LandingNav() {
         </div>
 
         <div className="hidden items-center gap-3 lg:flex">
-          <Button variant="ghost" asChild>
-            <Link href="/auth">Log in</Link>
-          </Button>
-          <Button asChild>
-            <Link href="/auth">Get Started</Link>
-          </Button>
+          {user ? (
+            <Button asChild className="shadow-xl shadow-primary/20">
+              <Link href="/dashboard">Dashboard</Link>
+            </Button>
+          ) : (
+            <>
+              <Button variant="ghost" asChild>
+                <Link href="/auth?next=/dashboard">Log in</Link>
+              </Button>
+              <Button asChild className="shadow-xl shadow-primary/20">
+                <Link href="/auth?next=/dashboard/profile/setup">Get Started</Link>
+              </Button>
+            </>
+          )}
         </div>
 
         {/* Mobile menu button */}
@@ -103,12 +121,20 @@ export function LandingNav() {
               Dashboard
             </Link>
             <div className="flex flex-col gap-3 pt-4 border-t border-border">
-              <Button variant="outline" asChild className="w-full">
-                <Link href="/auth">Log in</Link>
-              </Button>
-              <Button asChild className="w-full">
-                <Link href="/auth">Get Started</Link>
-              </Button>
+              {user ? (
+                <Button asChild className="w-full">
+                  <Link href="/dashboard" onClick={() => setMobileMenuOpen(false)}>Dashboard</Link>
+                </Button>
+              ) : (
+                <>
+                  <Button variant="outline" asChild className="w-full">
+                    <Link href="/auth?next=/dashboard" onClick={() => setMobileMenuOpen(false)}>Log in</Link>
+                  </Button>
+                  <Button asChild className="w-full">
+                    <Link href="/auth?next=/dashboard/profile/setup" onClick={() => setMobileMenuOpen(false)}>Get Started</Link>
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>

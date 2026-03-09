@@ -16,6 +16,8 @@ export interface Database {
                     avatar_url: string | null
                     reputation_points: number
                     badges: string[]
+                    bio: string | null
+                    location: string | null
                     created_at: string
                 }
                 Insert: {
@@ -24,6 +26,8 @@ export interface Database {
                     avatar_url?: string | null
                     reputation_points?: number
                     badges?: string[]
+                    bio?: string | null
+                    location?: string | null
                     created_at?: string
                 }
                 Update: {
@@ -32,6 +36,8 @@ export interface Database {
                     avatar_url?: string | null
                     reputation_points?: number
                     badges?: string[]
+                    bio?: string | null
+                    location?: string | null
                     created_at?: string
                 }
             }

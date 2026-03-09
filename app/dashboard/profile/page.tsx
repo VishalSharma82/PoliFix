@@ -45,6 +45,7 @@ const statusColors: Record<string, string> = {
 export default function ProfilePage() {
   const router = useRouter()
   const [profile, setProfile] = useState<Profile | null>(null)
+  const [user, setUser] = useState<any>(null)
   const [myReports, setMyReports] = useState<Problem[]>([])
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState({
@@ -60,9 +61,11 @@ export default function ProfilePage() {
       const { data: { user } } = await supabase.auth.getUser()
 
       if (!user) {
-        router.push('/auth')
+        router.push('/login')
         return
       }
+
+      setUser(user)
 
       // Fetch Profile
       const { data: profileData } = await supabase
@@ -71,7 +74,7 @@ export default function ProfilePage() {
         .eq('id', user.id)
         .single()
 
-      if (profileData) setProfile(profileData)
+      if (profileData) setProfile(profileData as Profile)
 
       // Fetch My Reports
       const { data: reports } = await supabase
@@ -81,8 +84,8 @@ export default function ProfilePage() {
         .order('created_at', { ascending: false })
 
       if (reports) {
-        setMyReports(reports)
-        const resolvedCount = reports.filter(r => r.status === 'resolved').length
+        setMyReports(reports as Problem[])
+        const resolvedCount = (reports as Problem[]).filter(r => r.status === 'resolved').length
 
         // Fetch Verifications (Simplified count)
         const { count: vCount } = await supabase
@@ -108,7 +111,7 @@ export default function ProfilePage() {
     }
 
     fetchProfileData()
-  }, [])
+  }, [router])
 
   if (loading) {
     return (
@@ -159,21 +162,21 @@ export default function ProfilePage() {
                     </span>
                   </div>
                   <p className="text-muted-foreground text-lg max-w-2xl leading-relaxed">
-                    Dedicated community member working towards a cleaner, safer city. Helping to identify and track civic infrastructure needs.
+                    {profile?.bio || "No bio provided. Update your profile to tell the community about yourself."}
                   </p>
 
                   <div className="flex flex-wrap justify-center lg:justify-start gap-6 mt-8 text-sm font-bold text-muted-foreground">
                     <span className="flex items-center gap-2 bg-muted/30 px-4 py-2 rounded-xl">
                       <Mail className="w-4 h-4 text-primary" />
-                      {profile?.email || 'Email not linked'}
+                      {user?.email || 'Email not linked'}
                     </span>
                     <span className="flex items-center gap-2 bg-muted/30 px-4 py-2 rounded-xl">
                       <MapPinned className="w-4 h-4 text-primary" />
-                      San Francisco Area
+                      {profile?.location || 'Location not set'}
                     </span>
                     <span className="flex items-center gap-2 bg-muted/30 px-4 py-2 rounded-xl">
                       <Calendar className="w-4 h-4 text-primary" />
-                      Joined {new Date(profile?.created_at || '').toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
+                      Joined {new Date(profile?.created_at || user?.created_at || '').toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
                     </span>
                   </div>
                 </div>
