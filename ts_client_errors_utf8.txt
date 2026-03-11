@@ -1,0 +1,31 @@
+﻿app/dashboard/page.tsx(76,52): error TS2339: Property 'status' does not exist on type 'never'.
+app/dashboard/page.tsx(77,54): error TS2339: Property 'status' does not exist on type 'never'.
+app/dashboard/page.tsx(78,51): error TS2339: Property 'status' does not exist on type 'never'.
+app/dashboard/page.tsx(88,63): error TS2339: Property 'category' does not exist on type 'never'.
+app/dashboard/page.tsx(90,57): error TS2339: Property 'category' does not exist on type 'never'.
+app/dashboard/page.tsx(91,57): error TS2339: Property 'status' does not exist on type 'never'.
+app/dashboard/page.tsx(93,58): error TS7006: Parameter 'l' implicitly has an 'any' type.
+app/dashboard/problem/[id]/page.tsx(70,21): error TS2345: Argument of type 'ParamValue' is not assignable to parameter of type '{}'.
+  Type 'undefined' is not assignable to type '{}'.
+app/dashboard/problem/[id]/page.tsx(80,33): error TS2339: Property 'reporter_id' does not exist on type 'never'.
+app/dashboard/problem/[id]/page.tsx(88,29): error TS2345: Argument of type 'ParamValue' is not assignable to parameter of type '{}'.
+  Type 'undefined' is not assignable to type '{}'.
+app/dashboard/problem/[id]/page.tsx(99,31): error TS2345: Argument of type 'ParamValue' is not assignable to parameter of type '{}'.
+  Type 'undefined' is not assignable to type '{}'.
+app/dashboard/problem/[id]/page.tsx(128,29): error TS2345: Argument of type 'ParamValue' is not assignable to parameter of type '{}'.
+  Type 'undefined' is not assignable to type '{}'.
+app/dashboard/problem/[id]/page.tsx(137,12): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: never, options?: { count?: "exact" | "planned" | "estimated" | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "12"; }, never, never, null, "verifications", never, "POST">', gave the following error.
+    Argument of type '{ problem_id: string; user_id: string; }' is not assignable to parameter of type 'never'.
+  Overload 2 of 2, '(values: never[], options?: { count?: "exact" | "planned" | "estimated" | undefined; defaultToNull?: boolean | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "12"; }, never, never, null, "verifications", never, "POST">', gave the following error.
+    Object literal may only specify known properties, and 'problem_id' does not exist in type 'never[]'.
+app/dashboard/problem/[id]/page.tsx(161,10): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: never, options?: { count?: "exact" | "planned" | "estimated" | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "12"; }, never, never, null, "comments", never, "POST">', gave the following error.
+    Argument of type '{ problem_id: string; user_id: string; content: string; }' is not assignable to parameter of type 'never'.
+  Overload 2 of 2, '(values: never[], options?: { count?: "exact" | "planned" | "estimated" | undefined; defaultToNull?: boolean | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "12"; }, never, never, null, "comments", never, "POST">', gave the following error.
+    Object literal may only specify known properties, and 'problem_id' does not exist in type 'never[]'.
+app/dashboard/report/page.tsx(201,70): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: never, options?: { count?: "exact" | "planned" | "estimated" | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "12"; }, never, never, null, "problems", never, "POST">', gave the following error.
+    Argument of type '{ title: string; description: string; category: ProblemCategory; severity: "low" | "medium" | "high" | "critical"; lat: number; lng: number; address: string; image_urls: string[]; reporter_id: string; status: string; }' is not assignable to parameter of type 'never'.
+  Overload 2 of 2, '(values: never[], options?: { count?: "exact" | "planned" | "estimated" | undefined; defaultToNull?: boolean | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "12"; }, never, never, null, "problems", never, "POST">', gave the following error.
+    Object literal may only specify known properties, and 'title' does not exist in type 'never[]'.

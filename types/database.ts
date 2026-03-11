@@ -40,6 +40,7 @@ export interface Database {
                     location?: string | null
                     created_at?: string
                 }
+                Relationships: any[]
             }
             problems: {
                 Row: {
@@ -87,6 +88,7 @@ export interface Database {
                     confirmed_count?: number
                     created_at?: string
                 }
+                Relationships: any[]
             }
             verifications: {
                 Row: {
@@ -107,6 +109,7 @@ export interface Database {
                     user_id?: string
                     created_at?: string
                 }
+                Relationships: any[]
             }
             comments: {
                 Row: {
@@ -130,6 +133,7 @@ export interface Database {
                     content?: string
                     created_at?: string
                 }
+                Relationships: any[]
             }
             notifications: {
                 Row: {
@@ -156,7 +160,20 @@ export interface Database {
                     is_read?: boolean
                     created_at?: string
                 }
+                Relationships: any[]
             }
+        }
+        Views: {
+            [_ in never]: never
+        }
+        Functions: {
+            [_ in never]: never
+        }
+        Enums: {
+            [_ in never]: never
+        }
+        CompositeTypes: {
+            [_ in never]: never
         }
     }
 }

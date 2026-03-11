@@ -169,6 +169,12 @@ export default function ReportPage() {
     )
   }
 
+  useEffect(() => {
+    if (step === 3 && formData.address === "") {
+      handleDetectLocation()
+    }
+  }, [step])
+
   const handleSubmit = async () => {
     setIsSubmitting(true)
     setError(null)

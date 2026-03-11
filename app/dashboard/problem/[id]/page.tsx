@@ -32,6 +32,12 @@ import { Progress } from "@/components/ui/progress"
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
 import { supabase } from "@/lib/supabase"
 import { Database } from "@/types/database"
+import dynamic from "next/dynamic"
+
+const ProblemMap = dynamic(
+  () => import("@/components/dashboard/problem-map").then(m => m.ProblemMap),
+  { ssr: false, loading: () => <div className="w-full h-48 bg-muted/20 animate-pulse rounded-none" /> }
+)
 
 type Problem = Database["public"]["Tables"]["problems"]["Row"]
 type Profile = Database["public"]["Tables"]["profiles"]["Row"]
@@ -59,6 +65,7 @@ export default function ProblemDetailPage() {
   const [error, setError] = useState<string | null>(null)
   const [activeImage, setActiveImage] = useState(0)
   const [showImageModal, setShowImageModal] = useState(false)
+  const [currentUser, setCurrentUser] = useState<any>(null)
 
   useEffect(() => {
     async function fetchProblemData() {
@@ -67,7 +74,7 @@ export default function ProblemDetailPage() {
         const { data: problemData, error: problemError } = await supabase
           .from('problems')
           .select('*')
-          .eq('id', id)
+          .eq('id', id as string)
           .single()
 
         if (problemError) throw problemError
@@ -85,7 +92,7 @@ export default function ProblemDetailPage() {
         const { data: commentsData } = await supabase
           .from('comments')
           .select('*, profiles(*)')
-          .eq('problem_id', id)
+          .eq('problem_id', id as string)
           .order('created_at', { ascending: true })
 
         setCommentsList(commentsData as any || [])
@@ -93,10 +100,11 @@ export default function ProblemDetailPage() {
         // Check if user has already verified
         const { data: { user } } = await supabase.auth.getUser()
         if (user) {
+          setCurrentUser(user)
           const { data: verification } = await supabase
             .from('verifications')
             .select('*')
-            .eq('problem_id', id)
+            .eq('problem_id', id as string)
             .eq('user_id', user.id)
             .single()
           if (verification) setHasVerified(true)
@@ -110,6 +118,43 @@ export default function ProblemDetailPage() {
 
     if (id) fetchProblemData()
   }, [id])
+
+  const handleMarkResolved = async () => {
+    if (!problem) return
+    try {
+      const { error } = await supabase
+        .from('problems')
+        .update({ status: 'resolved' })
+        .eq('id', id as string)
+      
+      if (error) throw error
+      setProblem(p => p ? { ...p, status: 'resolved' } : null)
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: problem?.title || 'Reported Problem',
+          text: `Check out this issue reported on Environment Friendly: ${problem?.title}`,
+          url: window.location.href,
+        })
+      } catch (err) {
+        console.error('Error sharing:', err)
+      }
+    } else {
+      window.open(`https://wa.me/?text=${encodeURIComponent(`Check out this issue: ${window.location.href}`)}`, '_blank')
+    }
+  }
+
+  const handleLocate = () => {
+    if (problem?.lat && problem?.lng) {
+      window.open(`https://www.google.com/maps/search/?api=1&query=${problem.lat},${problem.lng}`, '_blank')
+    }
+  }
 
   const handleVerify = async () => {
     setIsVerifying(true)
@@ -125,7 +170,7 @@ export default function ProblemDetailPage() {
         await supabase
           .from('verifications')
           .delete()
-          .eq('problem_id', id)
+          .eq('problem_id', id as string)
           .eq('user_id', user.id)
 
         setProblem(p => p ? { ...p, confirmed_count: Math.max(0, p.confirmed_count - 1) } : null)
@@ -307,11 +352,24 @@ export default function ProblemDetailPage() {
                   )}
                   {hasVerified ? "Confirmed" : "Confirm Issue"} ({problem.confirmed_count})
                 </Button>
-                <Button variant="outline" size="lg" className="h-14 px-8 rounded-2xl font-black text-xs uppercase tracking-widest border-border/40">
+
+                {currentUser?.id === problem.reporter_id && problem.status !== 'resolved' && (
+                  <Button 
+                    size="lg" 
+                    variant="default"
+                    className="h-14 px-8 rounded-2xl font-black text-xs uppercase tracking-widest bg-green-500 hover:bg-green-600 text-white shadow-xl shadow-green-500/30 transition-all border-none"
+                    onClick={handleMarkResolved}
+                  >
+                    <CheckCircle2 className="w-5 h-5 mr-3" />
+                    Mark as Resolved
+                  </Button>
+                )}
+
+                <Button variant="outline" size="lg" onClick={handleShare} className="h-14 px-8 rounded-2xl font-black text-xs uppercase tracking-widest border-border/40 hover:bg-muted/50 transition-all">
                   <Share2 className="w-5 h-5 mr-3" />
                   Share Report
                 </Button>
-                <Button variant="outline" size="lg" className="h-14 px-8 rounded-2xl font-black text-xs uppercase tracking-widest border-border/40">
+                <Button variant="outline" size="lg" onClick={handleLocate} className="h-14 px-8 rounded-2xl font-black text-xs uppercase tracking-widest border-border/40 hover:bg-muted/50 transition-all">
                   <Navigation className="w-5 h-5 mr-3" />
                   Locate
                 </Button>
@@ -478,27 +536,48 @@ export default function ProblemDetailPage() {
 
           {/* Location context */}
           <Card className="border-border/40 shadow-xl rounded-[2.5rem] overflow-hidden bg-card/50 backdrop-blur-sm">
-            <CardHeader className="p-8 pb-4">
-              <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Geospatial Context</CardTitle>
+            <CardHeader className="p-6 pb-2">
+              <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
+                <MapPin className="w-3.5 h-3.5 text-primary" />
+                Geospatial Context
+              </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
-              <div className="h-48 bg-muted/20 relative flex items-center justify-center overflow-hidden">
-                <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)', backgroundSize: '16px 16px' }} />
-                <motion.div
-                  animate={{ y: [0, -10, 0] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                >
-                  <div className="w-12 h-12 rounded-full bg-accent flex items-center justify-center shadow-2xl border-4 border-white">
-                    <MapPin className="w-6 h-6 text-white" />
-                  </div>
-                </motion.div>
-                <div className="absolute bottom-6 bg-background/80 backdrop-blur-md px-6 py-2 rounded-full border border-border/40 shadow-xl">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Radius: 500m</p>
+              <div className="h-52 relative overflow-hidden z-0">
+                <ProblemMap lat={problem.lat} lng={problem.lng} title={problem.title} />
+                {/* Radius label overlay */}
+                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-background/80 backdrop-blur-md px-4 py-1.5 rounded-full border border-border/40 shadow-xl z-[1000] pointer-events-none">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">⬤ Radius: 500m</p>
                 </div>
               </div>
-              <div className="p-8 text-center bg-muted/30">
-                <Button variant="secondary" className="w-full h-12 rounded-xl font-bold shadow-lg shadow-primary/5">
-                  Navigate to Problem
+              {/* Coordinates & address */}
+              <div className="px-6 pt-4 pb-2 space-y-1">
+                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Coordinates</p>
+                <p className="text-xs font-mono font-bold text-foreground/80">
+                  {problem.lat.toFixed(5)}, {problem.lng.toFixed(5)}
+                </p>
+                {problem.address && (
+                  <p className="text-xs text-muted-foreground truncate">{problem.address}</p>
+                )}
+              </div>
+              <div className="p-4 bg-muted/30 flex gap-3">
+                <Button
+                  variant="default"
+                  onClick={handleLocate}
+                  className="flex-1 h-11 rounded-xl font-bold shadow-lg shadow-primary/10 gap-2 text-xs"
+                >
+                  <Navigation className="w-4 h-4" />
+                  Open in Google Maps
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${problem.lat}, ${problem.lng}`)
+                  }}
+                  className="h-11 px-4 rounded-xl font-bold text-xs border-border/40"
+                  title="Copy coordinates"
+                >
+                  <MapPin className="w-4 h-4" />
                 </Button>
               </div>
             </CardContent>
