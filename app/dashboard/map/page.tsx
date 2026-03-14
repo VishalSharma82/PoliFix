@@ -24,8 +24,14 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
+import dynamic from "next/dynamic"
 import { supabase } from "@/lib/supabase"
 import { Database } from "@/types/database"
+
+const InteractiveMap = dynamic(() => import("@/components/dashboard/interactive-map").then(mod => mod.InteractiveMap), {
+  ssr: false,
+  loading: () => <div className="h-full w-full bg-muted/20 animate-pulse flex items-center justify-center rounded-[3rem]">Loading Map...</div>
+})
 
 type Problem = Database["public"]["Tables"]["problems"]["Row"]
 
@@ -227,65 +233,27 @@ export default function MapPage() {
         </AnimatePresence>
 
         {/* Map */}
-        <div className="flex-1 relative rounded-[3rem] overflow-hidden border border-border/40 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-slate-900 dark:to-slate-800 shadow-2xl transition-all duration-700">
-          {/* Grid pattern */}
-          <svg className="absolute inset-0 w-full h-full opacity-20" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <pattern id="fullMapGrid" width="80" height="80" patternUnits="userSpaceOnUse">
-                <path d="M 80 0 L 0 0 0 80" fill="none" stroke="currentColor" strokeWidth="0.5" className="text-primary" />
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#fullMapGrid)" />
-          </svg>
-
-          {/* Simulated roads */}
-          <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
-            <path d="M 0 200 Q 300 180, 600 200 T 1200 180" stroke="currentColor" strokeWidth="4" fill="none" className="text-muted-foreground/10" />
-            <path d="M 0 450 Q 500 420, 1000 450" stroke="currentColor" strokeWidth="4" fill="none" className="text-muted-foreground/10" />
-            <path d="M 400 0 Q 380 400, 400 800" stroke="currentColor" strokeWidth="4" fill="none" className="text-muted-foreground/10" />
-            <path d="M 800 0 Q 820 400, 800 800" stroke="currentColor" strokeWidth="4" fill="none" className="text-muted-foreground/10" />
-          </svg>
-
-          {/* Markers */}
-          <motion.div
-            className="absolute inset-0"
-            animate={{ scale: zoom }}
-            transition={{ type: "spring", stiffness: 100 }}
-          >
-            {filteredProblems.map((marker) => {
-              const { x, y } = getPosition(marker.lat, marker.lng)
-              return (
-                <motion.button
-                  key={marker.id}
-                  className="absolute -translate-x-1/2 -translate-y-1/2 z-10"
-                  style={{ left: `${x}%`, top: `${y}%` }}
-                  whileHover={{ scale: 1.3, zIndex: 50 }}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() => setSelectedMarker(marker)}
-                >
-                  <div className="relative">
-                    <div className={`w-12 h-12 rounded-[1.2rem] ${statusColors[marker.status] || "bg-primary"} flex items-center justify-center shadow-2xl border-4 border-background group transition-all`}>
-                      <MapPin className="w-6 h-6 text-white group-hover:animate-bounce" />
-                    </div>
-                    {marker.status === "reported" && (
-                      <motion.div
-                        className={`absolute inset-0 rounded-[1.2rem] ${statusColors[marker.status]}`}
-                        animate={{ scale: [1, 2, 1], opacity: [0.4, 0, 0.4] }}
-                        transition={{ duration: 2, repeat: Infinity }}
-                      />
-                    )}
-                  </div>
-                </motion.button>
-              )
-            })}
-          </motion.div>
+        <div className="flex-1 relative rounded-[3rem] overflow-hidden border border-border/40 bg-card/10 shadow-2xl transition-all duration-700">
+          <InteractiveMap 
+            problems={filteredProblems} 
+            height="100%" 
+            zoom={zoom + 12} 
+            center={[12.9716, 77.5946]}
+            onMarkerClick={(marker: Problem) => setSelectedMarker(marker)}
+          />
 
           {/* Zoom controls */}
-          <div className="absolute bottom-8 right-8 flex flex-col gap-3">
-            <Button className="h-12 w-12 rounded-2xl bg-background/80 backdrop-blur-md border-border/40 text-foreground shadow-2xl hover:bg-background" onClick={() => setZoom(Math.min(zoom + 0.2, 2))}>
+          <div className="absolute bottom-8 right-8 flex flex-col gap-3 z-[1000]">
+            <Button 
+              className="h-12 w-12 rounded-2xl bg-background/80 backdrop-blur-md border-border/40 text-foreground shadow-2xl hover:bg-background" 
+              onClick={() => setZoom(Math.min(zoom + 1, 6))}
+            >
               <Plus className="w-5 h-5" />
             </Button>
-            <Button className="h-12 w-12 rounded-2xl bg-background/80 backdrop-blur-md border-border/40 text-foreground shadow-2xl hover:bg-background" onClick={() => setZoom(Math.max(zoom - 0.2, 0.5))}>
+            <Button 
+              className="h-12 w-12 rounded-2xl bg-background/80 backdrop-blur-md border-border/40 text-foreground shadow-2xl hover:bg-background" 
+              onClick={() => setZoom(Math.max(zoom - 1, 1))}
+            >
               <Minus className="w-5 h-5" />
             </Button>
             <Button className="h-12 w-12 rounded-2xl bg-primary text-white shadow-2xl shadow-primary/40">
@@ -300,7 +268,7 @@ export default function MapPage() {
                 initial={{ opacity: 0, y: 50, scale: 0.9 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 50, scale: 0.9 }}
-                className="absolute bottom-8 left-8 right-8 sm:left-8 sm:right-auto sm:w-[400px] bg-background/95 backdrop-blur-xl rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.3)] border border-white/20 p-8 z-40"
+                className="absolute bottom-8 left-8 right-8 sm:left-8 sm:right-auto sm:w-[400px] bg-background/95 backdrop-blur-xl rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.3)] border border-white/20 p-8 z-[2000]"
               >
                 <button
                   onClick={() => setSelectedMarker(null)}

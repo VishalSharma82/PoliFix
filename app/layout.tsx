@@ -25,6 +25,8 @@ export const viewport: Viewport = {
   initialScale: 1,
 }
 
+import { SoundProvider } from "@/components/providers/SoundProvider"
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -33,7 +35,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${geistMono.variable}`}>
       <body className="font-sans antialiased">
-        {children}
+        <SoundProvider>
+          {children}
+        </SoundProvider>
         <Analytics />
       </body>
     </html>

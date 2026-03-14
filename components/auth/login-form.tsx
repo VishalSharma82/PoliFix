@@ -9,12 +9,15 @@ import { Label } from "@/components/ui/label"
 import { Mail, Lock, Loader2, AlertCircle } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
+import { useSoundContext } from "@/components/providers/SoundProvider"
+
 export function LoginForm({ redirectTo = "/dashboard" }: { redirectTo?: string }) {
     const router = useRouter()
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
+    const { play } = useSoundContext()
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -29,9 +32,11 @@ export function LoginForm({ redirectTo = "/dashboard" }: { redirectTo?: string }
 
             if (error) throw error
 
+            play('success')
             router.push(redirectTo)
             router.refresh()
         } catch (err: any) {
+            play('error')
             setError(err.message || "Failed to sign in. Please check your credentials.")
         } finally {
             setLoading(false)

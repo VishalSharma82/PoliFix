@@ -39,12 +39,33 @@ function MapResizer() {
   return null
 }
 
-export function InteractiveMap() {
-  const [problems, setProblems] = useState<Problem[]>([])
+interface InteractiveMapProps {
+  problems?: Problem[]
+  height?: string
+  center?: [number, number]
+  zoom?: number
+  onMarkerClick?: (problem: Problem) => void
+}
+
+export function InteractiveMap({ 
+  problems: propsProblems, 
+  height = "400px", 
+  center,
+  zoom = 13,
+  onMarkerClick 
+}: InteractiveMapProps) {
+  const [internalProblems, setInternalProblems] = useState<Problem[]>([])
   const [selectedMarker, setSelectedMarker] = useState<Problem | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(!propsProblems)
+
+  const displayProblems = propsProblems || internalProblems
 
   useEffect(() => {
+    if (propsProblems) {
+      setLoading(false)
+      return
+    }
+
     async function fetchProblems() {
       const { data, error } = await supabase
         .from('problems')
@@ -52,13 +73,12 @@ export function InteractiveMap() {
         .order('created_at', { ascending: false })
         .limit(50)
 
-      if (data) setProblems(data)
+      if (data) setInternalProblems(data)
       setLoading(false)
     }
 
     fetchProblems()
 
-    // Subscribe to real-time updates
     const channel = supabase
       .channel('schema-db-changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'problems' }, (payload) => {
@@ -69,24 +89,23 @@ export function InteractiveMap() {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [])
+  }, [propsProblems])
 
   if (loading) {
     return (
-      <div className="h-[400px] flex items-center justify-center bg-muted/20 rounded-[2rem] border">
+      <div style={{ height }} className="flex items-center justify-center bg-muted/20 rounded-[2rem] border">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     )
   }
 
-  // Default center (Bangalore as in the original code, or a dynamic one)
-  const defaultCenter: [number, number] = [12.9716, 77.5946]
+  const defaultCenter: [number, number] = center || [12.9716, 77.5946]
 
   return (
-    <div className="relative h-[400px] rounded-[2rem] overflow-hidden border shadow-xl z-0">
+    <div style={{ height }} className="relative rounded-[2rem] overflow-hidden border shadow-xl z-0">
       <MapContainer
         center={defaultCenter}
-        zoom={13}
+        zoom={zoom}
         scrollWheelZoom={false}
         className="h-full w-full"
       >
@@ -96,13 +115,16 @@ export function InteractiveMap() {
         />
         <MapResizer />
 
-        {problems.map((problem) => (
+        {displayProblems.map((problem) => (
           <Marker
             key={problem.id}
             position={[problem.lat, problem.lng]}
             icon={defaultIcon}
             eventHandlers={{
-              click: () => setSelectedMarker(problem),
+              click: () => {
+                setSelectedMarker(problem)
+                onMarkerClick?.(problem)
+              },
             }}
           >
             <Popup>
@@ -119,9 +141,8 @@ export function InteractiveMap() {
         ))}
       </MapContainer>
 
-      {/* Selected marker overlay */}
       <AnimatePresence>
-        {selectedMarker && (
+        {selectedMarker && !onMarkerClick && (
           <motion.div
             initial={{ opacity: 0, scale: 0.9, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -169,7 +190,6 @@ export function InteractiveMap() {
         )}
       </AnimatePresence>
 
-      {/* Legend */}
       <div className="absolute top-4 right-4 bg-background/80 backdrop-blur-md rounded-2xl p-4 border shadow-xl z-[1000]">
         <p className="text-[10px] font-black text-foreground uppercase tracking-widest mb-3">Live Status</p>
         <div className="space-y-2">

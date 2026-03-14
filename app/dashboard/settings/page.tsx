@@ -30,20 +30,45 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/lib/supabase"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
+import { useTheme } from "next-themes"
+
 export default function SettingsPage() {
   const router = useRouter()
+  const { theme, setTheme } = useTheme()
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [user, setUser] = useState<any>(null)
+  
   const [profile, setProfile] = useState({
     name: "",
     email: "",
     phone: "",
     bio: "",
     location: "",
+  })
+
+  const [notifications, setNotifications] = useState({
+    email: true,
+    push: true,
+    reports: true,
+    comments: false,
+    weekly: false,
+  })
+
+  const [privacy, setPrivacy] = useState({
+    publicProfile: true,
+    showLocation: true,
+    showStats: true,
+    anonymous: false,
+  })
+
+  const [appearance, setAppearance] = useState({
+    language: "en",
+    compactMode: false,
+    reduceAnimations: false,
   })
 
   useEffect(() => {
@@ -65,10 +90,18 @@ export default function SettingsPage() {
         setProfile({
           name: profileData.full_name || "",
           email: user.email || "",
-          phone: "",
+          phone: profileData.phone || "",
           bio: profileData.bio || "",
           location: profileData.location || "",
         })
+        
+        // Load preferences if stored in JSON field (assuming 'preferences' JSON column exist)
+        if (profileData.preferences) {
+          const prefs = profileData.preferences
+          if (prefs.notifications) setNotifications(prev => ({ ...prev, ...prefs.notifications }))
+          if (prefs.privacy) setPrivacy(prev => ({ ...prev, ...prefs.privacy }))
+          if (prefs.appearance) setAppearance(prev => ({ ...prev, ...prefs.appearance }))
+        }
       }
       setLoading(false)
     }
@@ -86,8 +119,14 @@ export default function SettingsPage() {
         .upsert({
           id: user.id,
           full_name: profile.name,
+          phone: profile.phone,
           bio: profile.bio,
           location: profile.location,
+          preferences: {
+            notifications,
+            privacy,
+            appearance,
+          },
           updated_at: new Date().toISOString(),
         })
 
@@ -274,13 +313,13 @@ export default function SettingsPage() {
             </CardHeader>
             <CardContent className="space-y-6">
               {[
-                { icon: Mail, title: "Email Notifications", description: "Receive email updates about your reports" },
-                { icon: Smartphone, title: "Push Notifications", description: "Receive push notifications on your device" },
-                { icon: Bell, title: "Report Updates", description: "Get notified when your reports are verified or resolved" },
-                { icon: User, title: "Comments", description: "Get notified when someone comments on your reports" },
-                { icon: Globe, title: "Weekly Digest", description: "Receive a weekly summary of community activity" },
-              ].map((item, index) => (
-                <div key={index} className="flex items-center justify-between p-4 rounded-xl bg-muted/50">
+                { id: 'email', icon: Mail, title: "Email Notifications", description: "Receive email updates about your reports" },
+                { id: 'push', icon: Smartphone, title: "Push Notifications", description: "Receive push notifications on your device" },
+                { id: 'reports', icon: Bell, title: "Report Updates", description: "Get notified when your reports are verified or resolved" },
+                { id: 'comments', icon: User, title: "Comments", description: "Get notified when someone comments on your reports" },
+                { id: 'weekly', icon: Globe, title: "Weekly Digest", description: "Receive a weekly summary of community activity" },
+              ].map((item) => (
+                <div key={item.id} className="flex items-center justify-between p-4 rounded-xl bg-muted/50">
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
                       <item.icon className="w-5 h-5 text-primary" />
@@ -290,9 +329,16 @@ export default function SettingsPage() {
                       <p className="text-sm text-muted-foreground">{item.description}</p>
                     </div>
                   </div>
-                  <Switch defaultChecked={index < 3} />
+                  <Switch 
+                    checked={notifications[item.id as keyof typeof notifications]} 
+                    onCheckedChange={(checked) => setNotifications(prev => ({ ...prev, [item.id]: checked }))}
+                  />
                 </div>
               ))}
+              <Button onClick={handleSave} disabled={saving} className="w-full mt-4">
+                {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                {saving ? "Saving..." : "Save Preferences"}
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>
@@ -305,19 +351,27 @@ export default function SettingsPage() {
             </CardHeader>
             <CardContent className="space-y-6">
               {[
-                { title: "Public Profile", description: "Make your profile visible to other users", defaultChecked: true },
-                { title: "Show Location", description: "Display your general location on your profile", defaultChecked: true },
-                { title: "Show Statistics", description: "Display your contribution statistics publicly", defaultChecked: true },
-                { title: "Anonymous Reporting", description: "Hide your name on reports by default", defaultChecked: false },
-              ].map((item, index) => (
-                <div key={index} className="flex items-center justify-between p-4 rounded-xl bg-muted/50">
+                { id: 'publicProfile', title: "Public Profile", description: "Make your profile visible to other users" },
+                { id: 'showLocation', title: "Show Location", description: "Display your general location on your profile" },
+                { id: 'showStats', title: "Show Statistics", description: "Display your contribution statistics publicly" },
+                { id: 'anonymous', title: "Anonymous Reporting", description: "Hide your name on reports by default" },
+              ].map((item) => (
+                <div key={item.id} className="flex items-center justify-between p-4 rounded-xl bg-muted/50">
                   <div>
                     <p className="font-medium text-sm">{item.title}</p>
                     <p className="text-sm text-muted-foreground">{item.description}</p>
                   </div>
-                  <Switch defaultChecked={item.defaultChecked} />
+                  <Switch 
+                     checked={privacy[item.id as keyof typeof privacy]} 
+                     onCheckedChange={(checked) => setPrivacy(prev => ({ ...prev, [item.id]: checked }))}
+                  />
                 </div>
               ))}
+
+              <Button onClick={handleSave} disabled={saving} className="w-full mt-4">
+                {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                {saving ? "Saving..." : "Save Privacy Settings"}
+              </Button>
 
               <div className="pt-4 border-t">
                 <h3 className="font-medium mb-4">Danger Zone</h3>
@@ -342,7 +396,7 @@ export default function SettingsPage() {
             <CardContent className="space-y-6">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Theme</label>
-                <Select defaultValue="system">
+                <Select value={theme} onValueChange={setTheme}>
                   <SelectTrigger className="w-full sm:w-64">
                     <SelectValue placeholder="Select theme" />
                   </SelectTrigger>
@@ -356,15 +410,14 @@ export default function SettingsPage() {
 
               <div className="space-y-2">
                 <label className="text-sm font-medium">Language</label>
-                <Select defaultValue="en">
+                <Select value={appearance.language} onValueChange={(val) => setAppearance(prev => ({ ...prev, language: val }))}>
                   <SelectTrigger className="w-full sm:w-64">
                     <SelectValue placeholder="Select language" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="en">English</SelectItem>
+                    <SelectItem value="hi">Hindi</SelectItem>
                     <SelectItem value="es">Spanish</SelectItem>
-                    <SelectItem value="fr">French</SelectItem>
-                    <SelectItem value="de">German</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -374,7 +427,10 @@ export default function SettingsPage() {
                   <p className="font-medium text-sm">Compact Mode</p>
                   <p className="text-sm text-muted-foreground">Use a more compact layout</p>
                 </div>
-                <Switch />
+                <Switch 
+                  checked={appearance.compactMode}
+                  onCheckedChange={(checked) => setAppearance(prev => ({ ...prev, compactMode: checked }))}
+                />
               </div>
 
               <div className="flex items-center justify-between p-4 rounded-xl bg-muted/50">
@@ -382,8 +438,16 @@ export default function SettingsPage() {
                   <p className="font-medium text-sm">Reduce Animations</p>
                   <p className="text-sm text-muted-foreground">Minimize motion effects</p>
                 </div>
-                <Switch />
+                <Switch 
+                  checked={appearance.reduceAnimations}
+                  onCheckedChange={(checked) => setAppearance(prev => ({ ...prev, reduceAnimations: checked }))}
+                />
               </div>
+
+              <Button onClick={handleSave} disabled={saving} className="w-full mt-4">
+                {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                {saving ? "Saving..." : "Save Appearance"}
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>

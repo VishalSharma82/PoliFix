@@ -35,16 +35,22 @@ const bottomNavItems = [
   { icon: HelpCircle, label: "Help Center", href: "/dashboard/help" },
 ]
 
+import { useSoundContext } from "@/components/providers/SoundProvider"
+
 export function DashboardSidebar() {
   const pathname = usePathname()
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const { play } = useSoundContext()
 
   return (
     <>
       {/* Mobile menu button */}
       <button
-        onClick={() => setMobileOpen(true)}
+        onClick={() => {
+          setMobileOpen(true)
+          play('slide')
+        }}
         className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-background rounded-lg border shadow-sm"
       >
         <Menu className="w-5 h-5" />
@@ -57,7 +63,10 @@ export function DashboardSidebar() {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           className="lg:hidden fixed inset-0 bg-black/50 z-40"
-          onClick={() => setMobileOpen(false)}
+          onClick={() => {
+            setMobileOpen(false)
+            play('slide')
+          }}
         />
       )}
 
@@ -86,7 +95,10 @@ export function DashboardSidebar() {
             )}
           </Link>
           <button
-            onClick={() => setCollapsed(!collapsed)}
+            onClick={() => {
+              setCollapsed(!collapsed)
+              play('slide')
+            }}
             className="hidden lg:flex w-8 h-8 items-center justify-center rounded-lg hover:bg-muted transition-colors"
           >
             <ChevronLeft

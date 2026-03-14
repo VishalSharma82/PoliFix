@@ -13,11 +13,13 @@ import { Database } from "@/types/database"
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"]
 
-const notifications = [
+const initialNotifications = [
   { id: 1, title: "Your report was verified", description: "Pothole on Main St got 5 verifications", time: "2 min ago", unread: true },
   { id: 2, title: "Issue resolved!", description: "Broken streetlight on Oak Ave is now fixed", time: "1 hour ago", unread: true },
   { id: 3, title: "New comment", description: "John Doe commented on your report", time: "3 hours ago", unread: false },
 ]
+
+import { SoundToggle } from "@/components/ui/sound-toggle"
 
 export function DashboardHeader() {
   const router = useRouter()
@@ -25,6 +27,13 @@ export function DashboardHeader() {
   const [showProfile, setShowProfile] = useState(false)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
+  const [notifications, setNotifications] = useState(initialNotifications)
+
+  const hasUnread = notifications.some(n => n.unread)
+
+  const handleMarkAllRead = () => {
+    setNotifications(prev => prev.map(n => ({ ...n, unread: false })))
+  }
 
   useEffect(() => {
     async function getProfile() {
@@ -75,6 +84,9 @@ export function DashboardHeader() {
           </Link>
         </Button>
 
+        {/* Sound Toggle */}
+        <SoundToggle />
+
         {/* Notifications */}
         <div className="relative">
           <Button
@@ -87,7 +99,7 @@ export function DashboardHeader() {
             }}
           >
             <Bell className="w-5 h-5" />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-accent rounded-full" />
+            {hasUnread && <span className="absolute top-1 right-1 w-2 h-2 bg-accent rounded-full" />}
           </Button>
 
           <AnimatePresence>
@@ -102,7 +114,12 @@ export function DashboardHeader() {
                 <div className="p-4 border-b">
                   <div className="flex items-center justify-between">
                     <h3 className="font-semibold">Notifications</h3>
-                    <button className="text-sm text-primary hover:underline">Mark all read</button>
+                    <button 
+                      className="text-sm text-primary hover:underline"
+                      onClick={handleMarkAllRead}
+                    >
+                      Mark all read
+                    </button>
                   </div>
                 </div>
                 <div className="max-h-80 overflow-y-auto">

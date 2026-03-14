@@ -10,6 +10,8 @@ import { Mail, Lock, User, Loader2, AlertCircle, CheckCircle2 } from "lucide-rea
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import Link from "next/link"
 
+import { useSoundContext } from "@/components/providers/SoundProvider"
+
 export function SignUpForm({ redirectTo = "/dashboard" }: { redirectTo?: string }) {
     const router = useRouter()
     const [email, setEmail] = useState("")
@@ -18,6 +20,7 @@ export function SignUpForm({ redirectTo = "/dashboard" }: { redirectTo?: string 
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [success, setSuccess] = useState(false)
+    const { play } = useSoundContext()
 
     const handleSignUp = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -37,8 +40,10 @@ export function SignUpForm({ redirectTo = "/dashboard" }: { redirectTo?: string 
 
             if (error) throw error
 
+            play('success')
             setSuccess(true)
         } catch (err: any) {
+            play('error')
             setError(err.message || "Failed to create account. Please try again.")
         } finally {
             setLoading(false)
