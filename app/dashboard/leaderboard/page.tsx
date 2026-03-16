@@ -11,14 +11,13 @@ import {
     ThumbsUp,
     CheckCircle2,
     Loader2,
-    Award,
-    Zap,
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { supabase } from "@/lib/supabase"
 import { Database } from "@/types/database"
+import { getCivicLevel, getLevelProgress, CIVIC_LEVELS } from "@/lib/priority"
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"]
 
@@ -184,7 +183,10 @@ export default function LeaderboardPage() {
                     </div>
                 </CardHeader>
                 <CardContent className="p-8 lg:p-12 space-y-4">
-                    {rest.map((leader, index) => (
+                    {rest.map((leader, index) => {
+                        const level = getCivicLevel(leader.reputation_points)
+                        const progress = getLevelProgress(leader.reputation_points)
+                        return (
                         <motion.div
                             key={leader.id}
                             initial={{ opacity: 0, x: -20 }}
@@ -199,9 +201,20 @@ export default function LeaderboardPage() {
                                 <Avatar className="w-12 h-12 border-2 border-border/40">
                                     <AvatarFallback className="font-bold">{leader.full_name?.[0]}</AvatarFallback>
                                 </Avatar>
-                                <div>
+                                <div className="flex-1 min-w-0">
                                     <h3 className="font-black text-lg tracking-tight group-hover:text-primary transition-colors">{leader.full_name}</h3>
-                                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Active Citizen</p>
+                                    <div className={`inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 rounded-full text-[10px] font-black border ${level.bgColor} ${level.color} ${level.borderColor}`}>
+                                        {level.emoji} {level.title}
+                                    </div>
+                                    {/* Progress to next level */}
+                                    {level.maxPoints !== Infinity && (
+                                        <div className="mt-2 flex items-center gap-2">
+                                            <div className="flex-1 h-1.5 rounded-full bg-muted/60 overflow-hidden">
+                                                <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${progress}%` }} />
+                                            </div>
+                                            <span className="text-[9px] font-black text-muted-foreground uppercase">{progress}% → {level.nextTitle}</span>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                             <div className="flex flex-col items-end shrink-0">
@@ -209,7 +222,8 @@ export default function LeaderboardPage() {
                                 <p className="text-[8px] font-black uppercase tracking-[0.2em] text-muted-foreground">Reputation</p>
                             </div>
                         </motion.div>
-                    ))}
+                        )
+                    })}
 
                     <div className="mt-8 text-center pt-8 border-t border-border/20">
                         <Button variant="ghost" className="rounded-2xl font-black text-xs uppercase tracking-widest h-14 px-10 hover:bg-primary/5 text-primary">
@@ -219,26 +233,43 @@ export default function LeaderboardPage() {
                 </CardContent>
             </Card>
 
-            {/* Legend Information */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {[
-                    { title: "Report Issues", desc: "Found a problem? Map it and earn 50 points when verified.", icon: MapPin },
-                    { title: "Verify Truth", desc: "See it for real? Verify others' reports for 10 points.", icon: ThumbsUp },
-                    { title: "Impact Milestones", desc: "Get reports resolved to earn major reputation bonuses.", icon: CheckCircle2 },
-                ].map(item => (
-                    <Card key={item.title} className="border-border/40 shadow-xl rounded-[2.5rem] bg-card/40 backdrop-blur-md">
-                        <CardContent className="p-8 flex items-start gap-4">
-                            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0">
-                                <item.icon className="w-6 h-6 text-primary" />
+            {/* Civic Levels Legend */}
+            <Card className="border-border/40 shadow-xl rounded-[2.5rem] bg-card/40 backdrop-blur-md">
+                <CardHeader className="p-8 pb-0">
+                    <CardTitle className="text-2xl font-black tracking-tight">Civic Level System</CardTitle>
+                    <p className="text-sm text-muted-foreground mt-1">Your reputation points unlock higher civic levels</p>
+                </CardHeader>
+                <CardContent className="p-8">
+                    <div className="grid grid-cols-1 sm:grid-cols-5 gap-4">
+                        {CIVIC_LEVELS.map(level => (
+                            <div key={level.title} className={`p-5 rounded-[1.5rem] border text-center ${level.bgColor} ${level.borderColor}`}>
+                                <div className="text-3xl mb-2">{level.emoji}</div>
+                                <p className={`font-black text-sm ${level.color}`}>{level.title}</p>
+                                <p className="text-[10px] font-bold text-muted-foreground mt-1 uppercase tracking-widest">
+                                    {level.maxPoints === Infinity ? `${level.minPoints}+ pts` : `${level.minPoints}–${level.maxPoints} pts`}
+                                </p>
                             </div>
-                            <div>
-                                <h4 className="font-black text-lg tracking-tight mb-2">{item.title}</h4>
-                                <p className="text-sm font-medium text-muted-foreground leading-relaxed">{item.desc}</p>
+                        ))}
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 pt-6 border-t border-border/20">
+                        {[
+                            { title: "+10 pts", desc: "Report an issue", icon: MapPin },
+                            { title: "+5 pts", desc: "Verify an issue", icon: ThumbsUp },
+                            { title: "+20 pts", desc: "Issue resolved", icon: CheckCircle2 },
+                        ].map(item => (
+                            <div key={item.title} className="flex items-center gap-3 p-4 rounded-2xl bg-background/50">
+                                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                                    <item.icon className="w-5 h-5 text-primary" />
+                                </div>
+                                <div>
+                                    <p className="font-black text-primary text-lg leading-none">{item.title}</p>
+                                    <p className="text-xs text-muted-foreground mt-0.5">{item.desc}</p>
+                                </div>
                             </div>
-                        </CardContent>
-                    </Card>
-                ))}
-            </div>
+                        ))}
+                    </div>
+                </CardContent>
+            </Card>
         </div>
     )
 }

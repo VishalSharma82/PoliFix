@@ -6,17 +6,16 @@ import {
   MapPin,
   Search,
   Filter,
-  Layers,
   Plus,
   Minus,
   Navigation,
   X,
   ThumbsUp,
   MessageCircle,
-  Clock,
   ChevronRight,
   Loader2,
   List,
+  Radar,
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -27,6 +26,7 @@ import Link from "next/link"
 import dynamic from "next/dynamic"
 import { supabase } from "@/lib/supabase"
 import { Database } from "@/types/database"
+import { haversineDistanceKm, computePriorityScore, getPriorityLevel } from "@/lib/priority"
 
 const InteractiveMap = dynamic(() => import("@/components/dashboard/interactive-map").then(mod => mod.InteractiveMap), {
   ssr: false,
@@ -54,6 +54,9 @@ export default function MapPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([])
+  const [nearbyOnly, setNearbyOnly] = useState(false)
+  const [userLocation, setUserLocation] = useState<[number, number] | null>(null)
+  const [locating, setLocating] = useState(false)
 
   useEffect(() => {
     async function fetchMapData() {
@@ -89,8 +92,33 @@ export default function MapPage() {
       result = result.filter(p => selectedStatuses.includes(p.status))
     }
 
+    // Nearby 2km filter
+    if (nearbyOnly && userLocation) {
+      result = result.filter(p => {
+        const dist = haversineDistanceKm(userLocation[0], userLocation[1], p.lat, p.lng)
+        return dist <= 2
+      })
+    }
+
+    // Sort by AI priority score
+    result = [...result].sort((a, b) => computePriorityScore(b) - computePriorityScore(a))
+
     setFilteredProblems(result)
-  }, [searchQuery, selectedCategories, selectedStatuses, problems])
+  }, [searchQuery, selectedCategories, selectedStatuses, problems, nearbyOnly, userLocation])
+
+  function handleLocate() {
+    if (!navigator.geolocation) return
+    setLocating(true)
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setUserLocation([pos.coords.latitude, pos.coords.longitude])
+        setNearbyOnly(true)
+        setLocating(false)
+      },
+      () => setLocating(false),
+      { timeout: 10000, enableHighAccuracy: true }
+    )
+  }
 
   const categories = [...new Set(problems.map(p => p.category))].map(cat => ({
     id: cat,
@@ -123,7 +151,7 @@ export default function MapPage() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
         <div>
           <h1 className="text-3xl font-black text-foreground tracking-tight">Geospatial Explorer</h1>
-          <p className="text-muted-foreground font-medium">Visualizing {filteredProblems.length} community impact points.</p>
+          <p className="text-muted-foreground font-medium">Visualizing {filteredProblems.length} community impact points. {nearbyOnly && userLocation && <span className="text-primary font-black">📍 Showing within 2km</span>}</p>
         </div>
         <div className="flex items-center gap-3 w-full sm:w-auto">
           <div className="relative flex-1 sm:w-80 group">
@@ -136,6 +164,22 @@ export default function MapPage() {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
+          {/* Nearby filter button */}
+          <Button
+            variant={nearbyOnly ? "default" : "outline"}
+            className={`h-14 px-5 rounded-2xl border-border/40 transition-all gap-2 font-bold text-xs ${nearbyOnly ? "shadow-xl shadow-primary/20" : ""}`}
+            onClick={() => {
+              if (nearbyOnly) {
+                setNearbyOnly(false)
+              } else {
+                handleLocate()
+              }
+            }}
+            disabled={locating}
+          >
+            {locating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Radar className="w-4 h-4" />}
+            {nearbyOnly ? "2km ON" : "Nearby"}
+          </Button>
           <Button
             variant={showFilters ? "default" : "outline"}
             className={`h-14 w-14 rounded-2xl border-border/40 transition-all ${showFilters ? "shadow-xl shadow-primary/20" : ""}`}

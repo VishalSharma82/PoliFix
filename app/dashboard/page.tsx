@@ -22,6 +22,7 @@ import { Progress } from "@/components/ui/progress"
 import { InteractiveMap } from "@/components/dashboard/interactive-map"
 import { supabase } from "@/lib/supabase"
 import { Database } from "@/types/database"
+import { computePriorityScore, getPriorityLevel } from "@/lib/priority"
 
 type Problem = Database["public"]["Tables"]["problems"]["Row"]
 type Profile = Database["public"]["Tables"]["profiles"]["Row"]
@@ -67,7 +68,10 @@ export default function DashboardPage() {
         .select('*')
         .order('created_at', { ascending: false })
         .limit(4)
-      if (recent) setRecentReports(recent)
+      if (recent) {
+        const sorted = [...recent].sort((a, b) => computePriorityScore(b) - computePriorityScore(a))
+        setRecentReports(sorted)
+      }
 
       // Fetch Stats
       const { data: allProblems } = await supabase.from('problems').select('status, category')
@@ -273,7 +277,10 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent className="p-8">
               <div className="grid gap-4">
-                {recentReports.map((report) => (
+                {recentReports.map((report) => {
+                  const score = computePriorityScore(report)
+                  const priority = getPriorityLevel(score)
+                  return (
                   <Link
                     key={report.id}
                     href={`/dashboard/problem/${report.id}`}
@@ -293,9 +300,14 @@ export default function DashboardPage() {
                             {report.address || 'Location unknown'}
                           </p>
                         </div>
-                        <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest shrink-0 shadow-sm ${statusColors[report.status]}`}>
-                          {report.status.replace("_", " ")}
-                        </span>
+                        <div className="flex flex-col items-end gap-1.5 shrink-0">
+                          <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm ${statusColors[report.status]}`}>
+                            {report.status.replace("_", " ")}
+                          </span>
+                          <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase border ${priority.bgColor} ${priority.color}`}>
+                            {priority.emoji} {priority.label}
+                          </span>
+                        </div>
                       </div>
                       <div className="flex items-center gap-6 mt-4">
                         <span className="flex items-center gap-2 text-xs font-black text-muted-foreground uppercase tracking-tighter">
@@ -310,7 +322,8 @@ export default function DashboardPage() {
                     </div>
                     <Eye className="w-6 h-6 text-primary opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all shrink-0" />
                   </Link>
-                ))}
+                  )
+                })}
               </div>
               {recentReports.length === 0 && (
                 <div className="py-20 text-center border-2 border-dashed border-border/20 rounded-[2rem]">

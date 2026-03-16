@@ -16,6 +16,9 @@ import {
   HelpCircle,
   ChevronLeft,
   Menu,
+  Trophy,
+  BarChart2,
+  Shield,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -27,6 +30,9 @@ const mainNavItems = [
   { icon: PlusCircle, label: "Report Problem", href: "/dashboard/report" },
   { icon: Activity, label: "Activity Feed", href: "/dashboard/activity" },
   { icon: Bell, label: "Notifications", href: "/dashboard/notifications" },
+  { icon: Trophy, label: "Leaderboard", href: "/dashboard/leaderboard" },
+  { icon: BarChart2, label: "City Stats", href: "/dashboard/city-stats" },
+  { icon: Shield, label: "Authority Panel", href: "/dashboard/authority" },
 ]
 
 const bottomNavItems = [

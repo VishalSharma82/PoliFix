@@ -1,0 +1,42 @@
+{
+  "name": "Problem Map — Civic Issue Reporter",
+  "short_name": "Problem Map",
+  "description": "Report and track civic infrastructure issues in your city. Together we fix our community.",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#6d28d9",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["utilities", "social", "government"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Report Problem",
+      "short_name": "Report",
+      "description": "Quickly report a new civic issue",
+      "url": "/dashboard/report",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "View Map",
+      "short_name": "Map",
+      "description": "See all issues on the map",
+      "url": "/dashboard/map",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

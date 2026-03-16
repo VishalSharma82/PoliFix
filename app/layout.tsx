@@ -17,10 +17,16 @@ export const metadata: Metadata = {
   title: 'Problem Map - Report & Track City Infrastructure Issues',
   description: 'A community-driven platform that allows citizens to report, verify, track, and help resolve infrastructure problems in their city using an interactive map.',
   keywords: ['civic tech', 'infrastructure', 'community reporting', 'city problems', 'urban issues'],
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Problem Map',
+  },
 }
 
 export const viewport: Viewport = {
-  themeColor: '#3b5998',
+  themeColor: '#6d28d9',
   width: 'device-width',
   initialScale: 1,
 }
@@ -34,11 +40,28 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${inter.variable} ${geistMono.variable}`}>
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+        <link rel="apple-touch-icon" href="/icon-192.png" />
+        <meta name="mobile-web-app-capable" content="yes" />
+      </head>
       <body className="font-sans antialiased">
         <SoundProvider>
           {children}
         </SoundProvider>
         <Analytics />
+        {/* PWA Service Worker Registration */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker.register('/sw.js').catch(function() {});
+                });
+              }
+            `,
+          }}
+        />
       </body>
     </html>
   )

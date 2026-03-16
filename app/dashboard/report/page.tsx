@@ -18,6 +18,9 @@ import {
   Shield,
   Navigation,
   Loader2,
+  Sparkles,
+  Brain,
+  Zap,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -114,17 +117,57 @@ export default function ReportPage() {
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isDetectingLocation, setIsDetectingLocation] = useState(false)
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [aiSuggestion, setAiSuggestion] = useState<{ category: ProblemCategory, severity: ProblemSeverity } | null>(null)
+
+  const analyzeImage = async (file: File) => {
+    setIsAnalyzing(true)
+    setAiSuggestion(null)
+    
+    // Simulate AI processing time
+    await new Promise(resolve => setTimeout(resolve, 3000))
+    
+    // Simple mock logic: look for keywords in filename or just randomize
+    const name = file.name.toLowerCase()
+    let suggestedCategory: ProblemCategory = "pothole"
+    let suggestedSeverity: ProblemSeverity = "medium"
+    
+    if (name.includes("light") || name.includes("dark")) {
+      suggestedCategory = "streetlight"
+      suggestedSeverity = "medium"
+    } else if (name.includes("trash") || name.includes("garbage") || name.includes("waste")) {
+      suggestedCategory = "garbage"
+      suggestedSeverity = "low"
+    } else if (name.includes("water") || name.includes("leak") || name.includes("pipe")) {
+      suggestedCategory = "water_leak"
+      suggestedSeverity = "high"
+    } else if (name.includes("pothole") || name.includes("hole") || name.includes("crack")) {
+      suggestedCategory = "pothole"
+      suggestedSeverity = "medium"
+    } else if (name.includes("accident") || name.includes("hazard") || name.includes("danger")) {
+      suggestedCategory = "safety_issue"
+      suggestedSeverity = "critical"
+    }
+    
+    setAiSuggestion({ category: suggestedCategory, severity: suggestedSeverity })
+    setIsAnalyzing(false)
+  }
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (!files || files.length === 0) return
-
+ 
     const newFiles = Array.from(files)
     setFormData(prev => ({
       ...prev,
       imageFiles: [...prev.imageFiles, ...newFiles],
       images: [...prev.images, ...newFiles.map(f => URL.createObjectURL(f))]
     }))
+
+    // Start AI analysis for the first new image
+    if (newFiles.length > 0) {
+      analyzeImage(newFiles[0])
+    }
   }
 
   const removeImage = (index: number) => {
@@ -429,6 +472,14 @@ export default function ReportPage() {
                     {formData.images.map((img, index) => (
                       <div key={index} className="relative aspect-square rounded-2xl overflow-hidden group shadow-md border border-border/20">
                         <img src={img} alt="" className="w-full h-full object-cover" />
+                        {isAnalyzing && index === 0 && (
+                          <div className="absolute inset-0 bg-primary/20 backdrop-blur-[2px] flex items-center justify-center">
+                            <div className="flex flex-col items-center gap-2">
+                              <Loader2 className="w-6 h-6 text-white animate-spin" />
+                              <span className="text-[10px] font-black text-white uppercase tracking-widest">Scanning...</span>
+                            </div>
+                          </div>
+                        )}
                         <button
                           onClick={() => removeImage(index)}
                           className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
@@ -450,6 +501,92 @@ export default function ReportPage() {
                     )}
                   </div>
                 </div>
+
+                {/* AI Analysis section */}
+                <AnimatePresence>
+                  {(isAnalyzing || aiSuggestion) && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <Card className="border-primary/20 bg-primary/5 rounded-2xl overflow-hidden mt-4">
+                        <CardContent className="p-6">
+                          {isAnalyzing ? (
+                            <div className="flex items-center gap-4">
+                              <div className="relative">
+                                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                                  <Brain className="w-6 h-6 text-primary" />
+                                </div>
+                                <motion.div 
+                                  className="absolute inset-0 bg-primary/20 rounded-xl"
+                                  animate={{ opacity: [0, 1, 0] }}
+                                  transition={{ duration: 1.5, repeat: Infinity }}
+                                />
+                              </div>
+                              <div>
+                                <h4 className="font-bold text-sm text-foreground">AI Visual Analysis In Progress...</h4>
+                                <p className="text-xs text-muted-foreground">Scanning images to suggest category and severity.</p>
+                              </div>
+                              <div className="ml-auto flex gap-1">
+                                {[0, 1, 2].map((i) => (
+                                  <motion.div
+                                    key={i}
+                                    className="w-1.5 h-1.5 rounded-full bg-primary"
+                                    animate={{ scale: [1, 1.5, 1] }}
+                                    transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.2 }}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                          ) : aiSuggestion && (
+                            <div className="space-y-4">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-success/10 flex items-center justify-center">
+                                  <Sparkles className="w-5 h-5 text-success" />
+                                </div>
+                                <h4 className="font-bold text-sm text-foreground">AI Intelligence Suggestion</h4>
+                              </div>
+                              
+                              <div className="grid grid-cols-2 gap-4">
+                                <div className="p-3 rounded-xl bg-background/50 border border-border/40">
+                                  <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">Detected Category</p>
+                                  <p className="text-sm font-bold flex items-center gap-2">
+                                    {categories.find(c => c.id === aiSuggestion.category)?.label}
+                                  </p>
+                                </div>
+                                <div className="p-3 rounded-xl bg-background/50 border border-border/40">
+                                  <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">Recommended Urgency</p>
+                                  <p className="text-sm font-bold flex items-center gap-2 text-foreground">
+                                    <span className={`w-2 h-2 rounded-full ${urgencyLevels.find(l => l.id === aiSuggestion.severity)?.color}`} />
+                                    {urgencyLevels.find(l => l.id === aiSuggestion.severity)?.label}
+                                  </p>
+                                </div>
+                              </div>
+                              
+                              <Button 
+                                size="sm" 
+                                className="w-full rounded-xl h-10 font-bold gap-2 shadow-lg shadow-primary/10"
+                                onClick={() => {
+                                  setFormData(prev => ({ 
+                                    ...prev, 
+                                    category: aiSuggestion.category, 
+                                    severity: aiSuggestion.severity 
+                                  }))
+                                  setAiSuggestion(null)
+                                }}
+                              >
+                                <Zap className="w-4 h-4" />
+                                Apply Suggested Details
+                              </Button>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </CardContent>
             </Card>
           )}
