@@ -27,3 +27,12 @@ export const getProblemById = async (req: Request, res: Response) => {
         res.status(500).json({ error: (error as Error).message });
     }
 };
+
+export const getPrioritizedProblems = async (req: Request, res: Response) => {
+    try {
+        const problems = await problemService.getPrioritizedProblems();
+        res.json({ data: problems });
+    } catch (error) {
+        res.status(500).json({ error: (error as Error).message });
+    }
+};

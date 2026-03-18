@@ -79,50 +79,57 @@ export function LandingHero() {
             </Badge>
 
             <div className="flex flex-col gap-6">
-              <h1 className="text-5xl font-extrabold tracking-tight text-foreground sm:text-6xl lg:text-7xl leading-[1.1]">
+              <h1 className="text-5xl font-extrabold tracking-tight text-foreground sm:text-6xl lg:text-7xl leading-[1.05]">
                 Map Problems.{" "}
-                <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary via-primary/80 to-accent animate-gradient">
+                <span className="gradient-text animate-gradient">
                   Fix Cities.
                 </span>
               </h1>
               <p className="text-xl text-muted-foreground max-w-xl leading-relaxed">
-                Connect with your community to report infrastructure gaps, verify local issues, and drive real-world solutions through data-driven advocacy.
+                Connect with your community to report infrastructure gaps, verify local issues, and drive real-world solutions through AI-powered civic action.
               </p>
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4">
-              <Button size="lg" asChild className="h-14 px-8 text-lg font-semibold gap-2 group shadow-xl shadow-primary/20 transition-all hover:shadow-primary/30 active:scale-95">
+              <Button size="lg" asChild className="h-14 px-8 text-base font-bold gap-2 group shadow-glow-sm hover:shadow-glow transition-all active:scale-95 rounded-2xl">
                 <Link href={user ? "/dashboard/report" : "/auth?next=/dashboard/report"}>
                   <MapPin className="h-5 w-5" />
                   Report a Problem
                   <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
                 </Link>
               </Button>
-              <Button size="lg" variant="outline" asChild className="h-14 px-8 text-lg font-semibold backdrop-blur-sm border-primary/20 hover:bg-primary/5 transition-all">
-                <Link href={user ? "/dashboard" : "/auth?next=/dashboard"}>Explore Map Live</Link>
+              <Button size="lg" variant="outline" asChild className="h-14 px-8 text-base font-bold backdrop-blur-sm border-primary/20 hover:bg-primary/5 hover:border-primary/40 transition-all rounded-2xl">
+                <Link href={user ? "/dashboard" : "/auth?next=/dashboard"}>Explore Map Live ↗</Link>
               </Button>
             </div>
 
-            {/* Micro-activity feed */}
-            <div className="flex flex-col gap-3 pt-4 border-t border-border/50">
-              <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Live Activity</p>
-              <div className="flex -space-x-3 overflow-hidden">
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <div key={i} className="inline-block h-10 w-10 rounded-full ring-2 ring-background bg-muted overflow-hidden">
-                    <img
-                      src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${i + 10}`}
-                      alt="User avatar"
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
-                ))}
-                <div className="flex h-10 w-10 items-center justify-center rounded-full ring-2 ring-background bg-primary text-[10px] font-bold text-primary-foreground">
-                  +1.2k
-                </div>
+            {/* Live activity */}
+            <div className="flex flex-col gap-3 pt-5 border-t border-border/40">
+              <div className="flex items-center gap-2">
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-500 opacity-75" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
+                </span>
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Live Activity</p>
               </div>
-              <p className="text-sm text-muted-foreground">
-                <span className="font-semibold text-foreground">Rahul</span> just confirmed a <span className="text-primary font-medium">water leak</span> in Sector 4
-              </p>
+              <div className="flex items-center gap-3">
+                <div className="flex -space-x-2.5 overflow-hidden">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <div key={i} className="inline-block h-9 w-9 rounded-full ring-2 ring-background bg-muted overflow-hidden">
+                      <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${i + 10}`} alt="User avatar" className="h-full w-full object-cover" />
+                    </div>
+                  ))}
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full ring-2 ring-background bg-primary text-[9px] font-black text-white">
+                    +1.2k
+                  </div>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  <span className="font-bold text-foreground">Rahul</span>{" "}
+                  confirmed a{" "}
+                  <span className="text-primary font-semibold">water leak</span>{" "}
+                  in Sector 4
+                </p>
+              </div>
             </div>
           </motion.div>
 

@@ -22,7 +22,7 @@ import { Progress } from "@/components/ui/progress"
 import { InteractiveMap } from "@/components/dashboard/interactive-map"
 import { supabase } from "@/lib/supabase"
 import { Database } from "@/types/database"
-import { computePriorityScore, getPriorityLevel } from "@/lib/priority"
+import { computePriorityScore, getPriorityLevel, getCivicLevel } from "@/lib/priority"
 
 type Problem = Database["public"]["Tables"]["problems"]["Row"]
 type Profile = Database["public"]["Tables"]["profiles"]["Row"]
@@ -46,6 +46,7 @@ export default function DashboardPage() {
   const [topContributors, setTopContributors] = useState<Profile[]>([])
   const [categoryStats, setCategoryStats] = useState<{ name: string; resolved: number; total: number; color: string }[]>([])
   const [userProfile, setUserProfile] = useState<Profile | null>(null)
+  const [impactScore, setImpactScore] = useState({ score: 0, label: "Calculating...", color: "text-muted-foreground", description: "" })
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -111,6 +112,33 @@ export default function DashboardPage() {
         .limit(3)
       if (contributors) setTopContributors(contributors)
 
+      // Calculate Civic Impact Score (Infrastructure Health)
+      if (allProblems) {
+        const total = allProblems.length
+        const resolved = allProblems.filter(p => p.status === 'resolved').length
+        const healthScore = total > 0 ? Math.round((resolved / total) * 100) : 100
+        
+        let label = "Moderate"
+        let color = "text-amber-500"
+        let description = "Infrastructure needs steady attention."
+        
+        if (healthScore >= 90) {
+          label = "Excellent"
+          color = "text-green-500"
+          description = "City infrastructure is in peak condition."
+        } else if (healthScore >= 70) {
+          label = "Good"
+          color = "text-emerald-500"
+          description = "Mostly healthy with minor issues."
+        } else if (healthScore < 50) {
+          label = "Critical"
+          color = "text-red-500"
+          description = "Immediate intervention required in multiple sectors."
+        }
+        
+        setImpactScore({ score: healthScore, label, color, description })
+      }
+
       setLoading(false)
     }
 
@@ -127,7 +155,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-mesh space-y-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Welcome section */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
         <div>
@@ -153,7 +181,7 @@ export default function DashboardPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
           >
-            <Card className="border-border/40 shadow-xl rounded-[2rem] overflow-hidden bg-card/50 backdrop-blur-sm hover:scale-[1.02] transition-transform duration-300">
+            <Card className="hover-lift shadow-premium border-border/40 rounded-[2.5rem] overflow-hidden bg-white/40 backdrop-blur-md transition-all duration-500">
               <CardContent className="p-8">
                 <div className="flex items-center justify-between mb-6">
                   <div className={`w-14 h-14 rounded-2xl ${stat.color} flex items-center justify-center shadow-lg transition-transform group-hover:scale-110`}>
@@ -176,6 +204,84 @@ export default function DashboardPage() {
           </motion.div>
         ))}
       </div>
+
+      {/* Impact Score Section (WOW Feature) */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.15 }}
+      >
+        <Card className="border-border/40 shadow-2xl rounded-[3rem] overflow-hidden bg-gradient-to-br from-primary/5 via-background to-background backdrop-blur-xl relative group">
+          <div className="absolute top-0 right-0 p-12 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none">
+            <TrendingUp className="w-64 h-64 -rotate-12" />
+          </div>
+          <CardContent className="p-10 lg:p-14">
+            <div className="flex flex-col lg:flex-row items-center gap-12">
+              <div className="relative shrink-0">
+                {/* Score Circular Progress */}
+                <svg className="w-48 h-48 transform -rotate-90">
+                  <circle
+                    cx="96"
+                    cy="96"
+                    r="88"
+                    stroke="currentColor"
+                    strokeWidth="12"
+                    fill="transparent"
+                    className="text-muted/20"
+                  />
+                  <motion.circle
+                    cx="96"
+                    cy="96"
+                    r="88"
+                    stroke="currentColor"
+                    strokeWidth="12"
+                    fill="transparent"
+                    strokeDasharray={552.92}
+                    initial={{ strokeDashoffset: 552.92 }}
+                    animate={{ strokeDashoffset: 552.92 - (552.92 * impactScore.score) / 100 }}
+                    transition={{ duration: 2, ease: "easeOut" }}
+                    className={impactScore.color}
+                  />
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className={`text-6xl font-black tracking-tighter ${impactScore.color}`}>{impactScore.score}</span>
+                  <span className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground mt-1">Health Score</span>
+                </div>
+              </div>
+              
+              <div className="flex-1 text-center lg:text-left space-y-6">
+                <div>
+                  <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary border border-primary/20 mb-4">
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span className="text-[10px] font-black uppercase tracking-widest">City Analytics Engine</span>
+                  </div>
+                  <h2 className="text-4xl lg:text-5xl font-black text-foreground tracking-tight mb-4">
+                    Infrastructure <span className={impactScore.color}>{impactScore.label}</span>
+                  </h2>
+                  <p className="text-xl text-muted-foreground font-medium max-w-2xl leading-relaxed">
+                    {impactScore.description} This score is calculated based on problem resolution time, citizen participation, and current open reports across all sectors.
+                  </p>
+                </div>
+                
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 pt-4">
+                  {[
+                    { label: "Resolution Rate", value: `${impactScore.score}%`, icon: CheckCircle2 },
+                    { label: "Citizen Pulse", value: topContributors.length > 0 ? "High" : "Low", icon: TrendingUp },
+                    { label: "Alert Density", value: stats[0].value, icon: MapPin },
+                    { label: "Active Nodes", value: "24/7", icon: Clock },
+                  ].map((item) => (
+                    <div key={item.label} className="p-4 rounded-2xl bg-white/50 border border-border/20">
+                      <item.icon className="w-5 h-5 text-primary/60 mb-2" />
+                      <p className="text-xl font-black text-foreground">{item.value}</p>
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-0.5">{item.label}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
 
       {/* Main content grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -284,7 +390,7 @@ export default function DashboardPage() {
                   <Link
                     key={report.id}
                     href={`/dashboard/problem/${report.id}`}
-                    className="flex items-center gap-6 p-6 rounded-[2rem] border border-border/20 hover:bg-background/80 hover:shadow-2xl hover:shadow-primary/5 transition-all group"
+                    className="hover-lift flex items-center gap-6 p-6 rounded-[2.5rem] border border-border/10 bg-white/30 backdrop-blur-sm hover:bg-white/50 hover:shadow-glow transition-all group"
                   >
                     <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center shrink-0 group-hover:bg-primary/10 transition-colors">
                       <MapPin className="w-7 h-7 text-primary transition-transform group-hover:scale-110" />

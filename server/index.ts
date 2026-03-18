@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
 
 import problemRoutes from './src/routes/problem.routes';
+import aiRoutes from './src/routes/ai.routes';
 
 dotenv.config();
 
@@ -25,11 +26,12 @@ const apiLimiter = rateLimit({
 app.use(helmet());
 app.use(cors());
 app.use(morgan('dev'));
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 app.use('/api/', apiLimiter);
 
 // Routes
 app.use('/api/v1/problems', problemRoutes);
+app.use('/api/v1/ai', aiRoutes);
 
 // Public API endpoints
 app.get('/api/problems', async (req, res) => {

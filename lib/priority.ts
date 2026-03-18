@@ -17,17 +17,25 @@ export interface PriorityInput {
   severity: Severity
   confirmed_count: number
   created_at: string
+  ai_priority_score?: number
+  location_importance?: number
 }
 
 export function computePriorityScore(problem: PriorityInput): number {
-  const severityScore = SEVERITY_WEIGHT[problem.severity] ?? 5
-  const confirmationScore = (problem.confirmed_count ?? 0) * 3
+  if (problem.ai_priority_score) return problem.ai_priority_score;
+
+  const severityScore = SEVERITY_WEIGHT[problem.severity] || 5
+  const confirmationScore = Math.min((problem.confirmed_count ?? 0) * 3, 30)
+  
+  const locationScore = (problem.location_importance ?? 5) * 2;
 
   const ageMs = Date.now() - new Date(problem.created_at).getTime()
   const ageHours = ageMs / (1000 * 60 * 60)
-  const recencyBonus = ageHours < 24 ? 15 : ageHours < 72 ? 8 : 0
+  const ageDays = ageHours / 24;
+  const recencyBonus = Math.min(ageDays * 2, 10);
 
-  return severityScore + confirmationScore + recencyBonus
+  // Fallback formula if AI hasn't processed it yet
+  return (severityScore * 0.4) + (confirmationScore * 0.3) + (locationScore * 0.2) + (recencyBonus * 0.1)
 }
 
 export interface PriorityLevel {

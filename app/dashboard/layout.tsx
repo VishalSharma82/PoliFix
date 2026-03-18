@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import { DashboardSidebar } from "@/components/dashboard/sidebar"
 import { DashboardHeader } from "@/components/dashboard/header"
+import { ChatAssistant } from "@/components/dashboard/chat-assistant"
 import { supabase } from "@/lib/supabase"
 import { Loader2 } from "lucide-react"
 
@@ -65,11 +66,12 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen bg-muted/30">
+    <div className="min-h-screen bg-muted/30 bg-dot-grid">
       <DashboardSidebar />
-      <div className="lg:pl-64">
+      <div className="lg:pl-[272px] transition-all duration-300">
         <DashboardHeader />
-        <main className="p-4 lg:p-6">{children}</main>
+        <main className="p-4 lg:p-6 pb-28 lg:pb-8">{children}</main>
+        <ChatAssistant />
       </div>
     </div>
   )

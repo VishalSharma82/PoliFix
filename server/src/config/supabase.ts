@@ -10,4 +10,9 @@ if (!supabaseUrl || !supabaseKey) {
     console.warn('Supabase URL or Key is missing in environment variables.');
 }
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
+export const supabase = createClient(supabaseUrl, supabaseKey, {
+    auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+    }
+});
