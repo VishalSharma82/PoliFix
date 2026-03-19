@@ -131,22 +131,24 @@ export default function ProfilePage() {
     <div className="space-y-8 max-w-7xl mx-auto px-4 py-8">
       {/* Profile header */}
       <Card className="border-border/40 shadow-2xl rounded-[3rem] overflow-hidden bg-card/50 backdrop-blur-xl relative">
-        <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-r from-primary/20 via-accent/10 to-transparent" />
+        {/* Full-height background gradient */}
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-primary/5 to-transparent pointer-events-none" />
+        <div className="absolute top-0 left-0 w-full h-48 bg-gradient-to-r from-blue-600/20 via-indigo-500/10 to-transparent pointer-events-none" />
         <CardContent className="p-8 lg:p-12 relative">
           <div className="flex flex-col lg:flex-row gap-10">
             {/* Avatar */}
             <div className="relative shrink-0 mx-auto lg:mx-0">
-              <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-[2.5rem] border-4 border-background shadow-2xl overflow-hidden group">
+              <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-[2.5rem] border-4 border-white/60 shadow-2xl overflow-hidden group bg-gradient-to-br from-blue-600 to-indigo-700">
                 <Avatar className="w-full h-full rounded-none">
-                  <AvatarFallback className="bg-primary text-white text-4xl font-black">
+                  <AvatarFallback className="bg-transparent text-white text-4xl font-black">
                     {profile?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
                   </AvatarFallback>
                 </Avatar>
-                <button className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <button className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                   <Camera className="w-8 h-8 text-white" />
                 </button>
               </div>
-              <div className="absolute -bottom-3 -right-3 w-12 h-12 rounded-2xl bg-accent text-white flex items-center justify-center shadow-xl border-4 border-background rotate-12">
+              <div className="absolute -bottom-3 -right-3 w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-white flex items-center justify-center shadow-xl border-4 border-background rotate-12">
                 <Star className="w-6 h-6 fill-current" />
               </div>
             </div>
@@ -182,9 +184,11 @@ export default function ProfilePage() {
                 </div>
 
                 <div className="flex justify-center gap-3">
-                  <Button variant="outline" className="rounded-2xl h-12 px-6 font-bold gap-2">
-                    <Edit2 className="w-4 h-4" />
-                    Edit Profile
+                  <Button variant="outline" className="rounded-2xl h-12 px-6 font-bold gap-2" asChild>
+                    <Link href="/dashboard/settings">
+                      <Edit2 className="w-4 h-4" />
+                      Edit Profile
+                    </Link>
                   </Button>
                   <Button variant="outline" size="icon" className="rounded-2xl h-12 w-12" asChild>
                     <Link href="/dashboard/settings">

@@ -236,7 +236,9 @@ export default function ActivityPage() {
                             href={`/dashboard/problem/${activity.problem.id}`}
                             className="font-black text-primary hover:text-accent transition-colors tracking-tight"
                           >
-                            {activity.problem.title}
+                            {activity.problem.title.includes('ROLE_KEY') 
+                              ? "Infrastructure Maintenance Required" 
+                              : activity.problem.title}
                           </Link>
                         </p>
                         {activity.comment && (

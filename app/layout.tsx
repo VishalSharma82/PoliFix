@@ -1,11 +1,16 @@
 import type { Metadata, Viewport } from 'next'
-import { Inter, Geist_Mono } from 'next/font/google'
+import { Inter, Outfit, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 
 const inter = Inter({ 
   subsets: ["latin"],
   variable: "--font-inter"
+})
+
+const outfit = Outfit({
+  subsets: ["latin"],
+  variable: "--font-outfit"
 })
 
 const geistMono = Geist_Mono({ 
@@ -32,6 +37,7 @@ export const viewport: Viewport = {
 }
 
 import { SoundProvider } from "@/components/providers/SoundProvider"
+import { ThemeProvider } from "next-themes"
 
 export default function RootLayout({
   children,
@@ -39,16 +45,18 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${geistMono.variable}`}>
+    <html lang="en" className={`${inter.variable} ${outfit.variable} ${geistMono.variable}`} suppressHydrationWarning>
       <head>
         <link rel="manifest" href="/manifest.json" />
         <link rel="apple-touch-icon" href="/icon-192.png" />
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
       <body className="font-sans antialiased">
-        <SoundProvider>
-          {children}
-        </SoundProvider>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange={false}>
+          <SoundProvider>
+            {children}
+          </SoundProvider>
+        </ThemeProvider>
         <Analytics />
         {/* PWA Service Worker Registration */}
         <script

@@ -12,13 +12,15 @@ import {
   MapPin, 
   AlertTriangle, 
   TrendingUp,
-  ChevronDown
+  ChevronDown,
+  Minimize2,
+  Maximize2
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Card } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { cn } from "@/lib/utils"
 
 interface Message {
   role: "user" | "assistant"
@@ -28,6 +30,7 @@ interface Message {
 
 export function ChatAssistant() {
   const [isOpen, setIsOpen] = useState(false)
+  const [isMinimized, setIsMinimized] = useState(false)
   const [message, setMessage] = useState("")
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -37,12 +40,13 @@ export function ChatAssistant() {
     }
   ])
   const [loading, setLoading] = useState(false)
-  const scrollRef = useRef<HTMLDivElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages, isOpen])
+    if (isOpen && !isMinimized) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }
+  }, [messages, isOpen, isMinimized])
 
   const handleSend = async (text: string = message) => {
     if (!text.trim() || loading) return
@@ -84,11 +88,10 @@ export function ChatAssistant() {
     { label: "Unresolved issues?", icon: AlertTriangle },
   ]
 
-  // Simple markdown renderer for bold and lists
   const renderContent = (content: string) => {
     return content.split('\n').map((line, i) => {
       const formattedLine = line
-        .replace(/\*\*(.*?)\*\*/g, '<strong class="text-indigo-600">$1</strong>')
+        .replace(/\*\*(.*?)\*\*/g, '<strong class="text-blue-600">$1</strong>')
         .replace(/^\* (.*)/g, '<li class="ml-4 list-disc">$1</li>')
       
       return <div key={i} dangerouslySetInnerHTML={{ __html: formattedLine }} className="min-h-[1.25rem]" />
@@ -96,103 +99,141 @@ export function ChatAssistant() {
   }
 
   return (
-    <div className="fixed bottom-8 right-8 z-[5000]">
+    <div className="fixed bottom-6 right-6 z-[9999] flex flex-col items-end gap-4 pointer-events-none">
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.9, transformOrigin: "bottom right" }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.9 }}
-            className="mb-6"
+            initial={{ opacity: 0, scale: 0.95, y: 20, transformOrigin: "bottom right" }}
+            animate={{ 
+              opacity: 1, 
+              scale: 1, 
+              y: 0,
+              height: isMinimized ? "72px" : "min(680px, 85vh)"
+            }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            className={cn(
+              "pointer-events-auto transition-all duration-300 ease-in-out",
+              "w-[min(420px,92vw)] shadow-premium rounded-[2.5rem] overflow-hidden glass-strong"
+            )}
           >
-            <Card className="w-[400px] h-[600px] flex flex-col rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.3)] border-white/20 bg-background/95 backdrop-blur-2xl overflow-hidden border">
-              {/* Header */}
-              <div className="p-6 bg-indigo-600 text-white flex items-center justify-between shadow-lg relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl" />
-                <div className="flex items-center gap-4 relative z-10">
-                  <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30 shadow-inner">
-                    <Brain className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="font-black text-lg tracking-tight">Civic AI Assistant</h3>
-                    <div className="flex items-center gap-1.5">
-                      <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                      <p className="text-[10px] font-black uppercase tracking-widest text-indigo-100">Live City Context</p>
-                    </div>
+            {/* Header */}
+            <div className={cn(
+              "p-5 flex items-center justify-between transition-all group",
+              isMinimized ? "bg-transparent" : "bg-gradient-to-r from-blue-600/10 to-indigo-600/10 border-b border-border/10"
+            )}>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-glow-sm">
+                  <Brain className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-black text-sm text-foreground tracking-tight">PoliFix Assistant</h3>
+                  <div className="flex items-center gap-1.5 leading-none">
+                    <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                    <span className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">AI Hub Online</span>
                   </div>
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)} className="text-white hover:bg-white/10 rounded-xl relative z-10">
-                  <ChevronDown className="w-6 h-6" />
+              </div>
+              <div className="flex items-center gap-1">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={() => setIsMinimized(!isMinimized)} 
+                  className="rounded-xl h-8 w-8 hover:bg-white/20 text-muted-foreground hover:text-foreground"
+                >
+                  {isMinimized ? <Maximize2 className="w-4 h-4" /> : <Minimize2 className="w-4 h-4" />}
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={() => setIsOpen(false)} 
+                  className="rounded-xl h-8 w-8 hover:bg-red-500/10 text-muted-foreground hover:text-red-500"
+                >
+                  <X className="w-4 h-4" />
                 </Button>
               </div>
+            </div>
 
-              {/* Messages */}
-              <ScrollArea className="flex-1 p-6 scroll-smooth">
-                <div className="space-y-6">
-                  {messages.map((msg, i) => (
-                    <motion.div
-                      initial={{ opacity: 0, x: msg.role === "user" ? 20 : -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      key={i}
-                      className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-                    >
-                      <div className={`max-w-[85%] p-4 rounded-2xl text-sm leading-relaxed shadow-sm ${
-                        msg.role === "user" 
-                          ? "bg-indigo-600 text-white rounded-tr-none font-bold" 
-                          : "bg-muted/50 border border-border/40 rounded-tl-none text-foreground font-medium"
-                      }`}>
-                        {renderContent(msg.content)}
-                      </div>
-                    </motion.div>
-                  ))}
-                  {loading && (
-                    <div className="flex justify-start">
-                      <div className="bg-muted/50 border border-border/40 p-4 rounded-2xl rounded-tl-none flex gap-2 items-center">
-                        <Loader2 className="w-4 h-4 animate-spin text-indigo-600" />
-                        <span className="text-xs font-black text-indigo-600 uppercase tracking-widest">AI is thinking...</span>
-                      </div>
-                    </div>
-                  )}
-                  <div ref={messagesEndRef} />
-                </div>
-              </ScrollArea>
-
-              {/* Action Bar */}
-              {!loading && messages.length < 4 && (
-                <div className="px-6 pb-2 flex gap-2 flex-wrap">
-                  {quickActions.map((action, i) => (
-                    <Button 
-                      key={i} 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => handleSend(action.label)}
-                      className="rounded-full text-[10px] font-black uppercase border-indigo-100 hover:bg-indigo-50 hover:text-indigo-600 transition-all h-8"
-                    >
-                      <action.icon className="w-3 h-3 mr-1.5" />
-                      {action.label}
-                    </Button>
-                  ))}
-                </div>
-              )}
-
-              {/* Input */}
-              <div className="p-6 border-t border-border/20 bg-background/50">
-                <form 
-                  onSubmit={(e) => { e.preventDefault(); handleSend() }}
-                  className="flex gap-3"
+            <AnimatePresence>
+              {!isMinimized && (
+                <motion.div 
+                  initial={{ opacity: 0 }} 
+                  animate={{ opacity: 1 }} 
+                  exit={{ opacity: 0 }}
+                  className="flex flex-col h-[calc(100%-80px)]"
                 >
-                  <Input 
-                    placeholder="Ask about city infrastructure..." 
-                    className="h-14 rounded-2xl border-border/40 bg-background px-6 font-medium shadow-inner focus:ring-indigo-500/20"
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                  />
-                  <Button size="icon" className="h-14 w-14 rounded-2xl bg-indigo-600 text-white shadow-xl shadow-indigo-500/20 shrink-0 hover:bg-indigo-700">
-                    <Send className="w-6 h-6" />
-                  </Button>
-                </form>
-              </div>
-            </Card>
+                  {/* Messages */}
+                  <ScrollArea className="flex-1 px-6 py-4">
+                    <div className="space-y-6">
+                      {messages.map((msg, i) => (
+                        <div
+                          key={i}
+                          className={cn(
+                            "flex flex-col gap-1.5",
+                            msg.role === "user" ? "items-end" : "items-start"
+                          )}
+                        >
+                          <div className={cn(
+                            "max-w-[85%] px-5 py-3.5 rounded-2xl text-[13px] leading-relaxed shadow-sm",
+                            msg.role === "user" 
+                              ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-tr-none font-bold" 
+                              : "glass bg-white/40 dark:bg-white/5 border border-white/10 rounded-tl-none font-medium text-foreground"
+                          )}>
+                            {renderContent(msg.content)}
+                          </div>
+                          <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground opacity-50 px-1">
+                            {msg.role === "user" ? "You" : "PoliFix AI"} · {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                      ))}
+                      {loading && (
+                        <div className="flex items-start gap-2">
+                           <div className="glass bg-white/40 dark:bg-white/5 border border-white/10 p-4 rounded-2xl rounded-tl-none flex gap-3 items-center">
+                            <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" />
+                            <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest animate-pulse">Analyzing City Data...</span>
+                          </div>
+                        </div>
+                      )}
+                      <div ref={messagesEndRef} />
+                    </div>
+                  </ScrollArea>
+
+                  {/* Footer (Quick Actions + Input) */}
+                  <div className="p-5 space-y-4">
+                    {!loading && messages.length < 5 && (
+                      <div className="flex gap-2 flex-wrap pb-2">
+                        {quickActions.map((action, i) => (
+                          <motion.button 
+                            key={i}
+                            whileHover={{ scale: 1.05, y: -2 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => handleSend(action.label)}
+                            className="px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest bg-blue-500/10 text-blue-600 border border-blue-500/10 hover:bg-blue-500/20 transition-all flex items-center gap-1.5"
+                          >
+                            <action.icon className="w-3 h-3" />
+                            {action.label}
+                          </motion.button>
+                        ))}
+                      </div>
+                    )}
+
+                    <form 
+                      onSubmit={(e) => { e.preventDefault(); handleSend() }}
+                      className="flex gap-2 relative bg-background/50 p-1.5 rounded-[1.5rem] border border-border/20 shadow-inner"
+                    >
+                      <Input 
+                        placeholder="Ask anything..." 
+                        className="bg-transparent border-none shadow-none focus-visible:ring-0 text-sm font-medium h-11 px-4"
+                        value={message}
+                        onChange={(e) => setMessage(e.target.value)}
+                      />
+                      <Button size="icon" className="h-11 w-11 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-glow-sm shrink-0 hover:scale-105 transition-all">
+                        <Send className="w-4.5 h-4.5" />
+                      </Button>
+                    </form>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         )}
       </AnimatePresence>
@@ -200,18 +241,24 @@ export function ChatAssistant() {
       <motion.button
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
-        onClick={() => setIsOpen(!isOpen)}
-        className={`w-16 h-16 rounded-3xl flex items-center justify-center shadow-2xl transition-all relative ${
-          isOpen ? "bg-background text-foreground border border-border/40" : "bg-indigo-600 text-white shadow-indigo-500/40"
-        }`}
+        onClick={() => {
+          if (isOpen && isMinimized) setIsMinimized(false)
+          else setIsOpen(!isOpen)
+        }}
+        className={cn(
+          "w-16 h-16 rounded-[2rem] flex items-center justify-center shadow-data transition-all pointer-events-auto",
+          isOpen && !isMinimized 
+            ? "bg-destructive text-white scale-90" 
+            : "bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-glow"
+        )}
       >
         <AnimatePresence mode="wait">
-          {isOpen ? (
-            <motion.div initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }} key="close">
+          {isOpen && !isMinimized ? (
+            <motion.div initial={{ opacity: 0, rotate: -90 }} animate={{ opacity: 1, rotate: 0 }} key="close">
               <X className="w-8 h-8" />
             </motion.div>
           ) : (
-            <motion.div initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.5, opacity: 0 }} key="chat" className="relative">
+            <motion.div initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} key="closed" className="relative">
               <MessageCircle className="w-8 h-8" />
               <div className="absolute -top-1 -right-1 w-5 h-5 bg-pink-500 rounded-full border-2 border-indigo-600 flex items-center justify-center animate-bounce shadow-lg">
                 <Sparkles className="w-3 h-3 text-white" />

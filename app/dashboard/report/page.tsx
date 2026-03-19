@@ -22,10 +22,12 @@ import {
   Brain,
   Zap,
 } from "lucide-react"
+import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
 import Link from "next/link"
 import { supabase } from "@/lib/supabase"
@@ -457,23 +459,42 @@ export default function ReportPage() {
       </div>
 
       {/* Progress indicator */}
-      <div className="flex items-center gap-3 mb-12">
+      <div className="flex items-center justify-between gap-2 mb-16 px-2">
         {[1, 2, 3, 4].map((s) => (
-          <div key={s} className="flex-1 flex items-center gap-3">
-            <motion.div
-              className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-black transition-all ${s < step
-                ? "bg-primary text-white shadow-lg shadow-primary/20"
-                : s === step
-                  ? "bg-primary text-white shadow-xl shadow-primary/40 ring-4 ring-primary/10"
-                  : "bg-muted text-muted-foreground"
-                }`}
-              animate={{ scale: s === step ? 1.05 : 1 }}
-            >
-              {s < step ? <Check className="w-5 h-5" /> : s}
-            </motion.div>
-            {s < 4 && (
-              <div className={`flex-1 h-1.5 rounded-full ${s < step ? "bg-primary" : "bg-muted"}`} />
-            )}
+          <div key={s} className="flex-1 flex flex-col items-center gap-3 group">
+            <div className="flex items-center w-full gap-2">
+               <div className={cn("h-1 flex-1 rounded-full bg-border/20 overflow-hidden", s <= step && "bg-transparent")}>
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: s < step ? "100%" : "0%" }}
+                    className="h-full bg-primary"
+                  />
+               </div>
+               <motion.div
+                 className={cn(
+                   "w-12 h-12 rounded-2xl flex items-center justify-center text-sm font-black transition-all shrink-0",
+                   s < step ? "bg-primary text-white shadow-xl shadow-primary/20" :
+                   s === step ? "bg-primary/20 text-primary ring-2 ring-primary/40 shadow-glow" :
+                   "bg-muted/30 text-muted-foreground border border-white/5"
+                 )}
+                 animate={{ scale: s === step ? 1.1 : 1 }}
+               >
+                 {s < step ? <Check className="w-5 h-5" /> : s}
+               </motion.div>
+               <div className={cn("h-1 flex-1 rounded-full bg-border/20 overflow-hidden", s < step && "bg-transparent")}>
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: s < step ? "100%" : "0%" }}
+                    className="h-full bg-primary"
+                  />
+               </div>
+            </div>
+            <span className={cn(
+               "text-[10px] font-black uppercase tracking-widest transition-colors",
+               s === step ? "text-primary" : "text-muted-foreground/60"
+            )}>
+               {s === 1 ? "Issue" : s === 2 ? "Details" : s === 3 ? "Location" : "Confirm"}
+            </span>
           </div>
         ))}
       </div>
@@ -496,23 +517,40 @@ export default function ReportPage() {
           transition={{ duration: 0.3 }}
         >
           {step === 1 && (
-            <Card className="glass shadow-premium border-white/20 rounded-[2.5rem] overflow-hidden">
-              <CardContent className="p-8 lg:p-12">
-                <h2 className="text-xl font-bold mb-8 text-center sm:text-left">What kind of issue are you reporting?</h2>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
+            <Card className="glass-strong shadow-premium border-white/10 rounded-[3rem] overflow-hidden">
+              <CardContent className="p-10 lg:p-14">
+                <div className="flex flex-col items-center text-center mb-12">
+                   <div className="w-16 h-16 rounded-3xl bg-primary/10 flex items-center justify-center mb-6 border border-primary/20">
+                      <Sparkles className="w-8 h-8 text-primary" />
+                   </div>
+                   <h2 className="text-3xl font-black text-foreground tracking-tight">Select Issue Category</h2>
+                   <p className="text-muted-foreground mt-2 max-w-sm">Help us route your report to the right department by choosing a category.</p>
+                </div>
+
+                <div className="grid grid-cols-2 lg:grid-cols-3 gap-6">
                   {categories.map((category) => (
                     <button
                       key={category.id}
                       onClick={() => setFormData({ ...formData, category: category.id })}
-                      className={`hover-lift group p-6 rounded-[2.5rem] border-2 transition-all duration-500 flex flex-col items-center gap-4 ${formData.category === category.id
-                        ? "border-primary bg-primary/10 shadow-glow"
-                        : "border-border/10 bg-white/40 glass hover:bg-white/60"
-                        }`}
+                      className={cn(
+                        "hover-lift group p-8 rounded-[2.5rem] border-2 transition-all duration-500 flex flex-col items-center gap-4 relative overflow-hidden",
+                        formData.category === category.id
+                          ? "border-primary bg-primary/10 shadow-glow"
+                          : "border-white/5 bg-white/5 glass hover:bg-white/10"
+                      )}
                     >
-                      <div className={`w-16 h-16 rounded-2xl ${category.color} flex items-center justify-center shadow-lg transition-transform group-hover:scale-110 group-hover:rotate-3`}>
-                        <category.icon className="w-8 h-8 text-white" />
+                      {formData.category === category.id && (
+                         <div className="absolute top-4 right-4 w-6 h-6 rounded-full bg-primary flex items-center justify-center shadow-lg">
+                            <Check className="w-3.5 h-3.5 text-white" />
+                         </div>
+                      )}
+                      <div className={cn(
+                         "w-20 h-20 rounded-[2rem] flex items-center justify-center shadow-2xl transition-all duration-500 group-hover:scale-110",
+                         category.color
+                      )}>
+                        <category.icon className="w-10 h-10 text-white" />
                       </div>
-                      <p className="text-sm font-black text-center leading-tight tracking-tight">{category.label}</p>
+                      <p className="text-sm font-black text-center leading-tight tracking-tight uppercase tracking-[0.1em]">{category.label}</p>
                     </button>
                   ))}
                 </div>
@@ -719,7 +757,7 @@ export default function ReportPage() {
                   Detect Current Location
                 </Button>
 
-                <div className="h-80 rounded-[2rem] relative overflow-hidden border border-border/20 shadow-inner z-0">
+                <div className="h-[400px] rounded-[2.5rem] relative overflow-hidden border border-white/10 shadow-2xl z-0 group">
                   <MapContainer
                     center={[formData.lat, formData.lng]}
                     zoom={15}
@@ -739,8 +777,11 @@ export default function ReportPage() {
                     />
                   </MapContainer>
 
-                  <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-background/80 backdrop-blur-md px-6 py-2 rounded-full border border-border/40 shadow-xl z-[1000] pointer-events-none">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Click to move or drag the pin</p>
+                  <div className="absolute inset-x-6 bottom-6 flex justify-center z-[1000] pointer-events-none">
+                    <div className="glass-strong bg-background/60 px-6 py-3 rounded-2xl border border-white/10 shadow-2xl flex items-center gap-3 animate-bounce">
+                      <Navigation className="w-4 h-4 text-primary" />
+                      <p className="text-[10px] font-black uppercase tracking-widest text-foreground">Click or Drag to set location</p>
+                    </div>
                   </div>
                 </div>
 

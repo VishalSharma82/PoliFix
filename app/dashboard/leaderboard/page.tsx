@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { motion } from "framer-motion"
+import { motion, animate } from "framer-motion"
 import {
     Trophy,
     Medal,
@@ -11,6 +11,7 @@ import {
     ThumbsUp,
     CheckCircle2,
     Loader2,
+    Sparkles,
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -21,20 +22,47 @@ import { getCivicLevel, getLevelProgress, CIVIC_LEVELS } from "@/lib/priority"
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"]
 
+function AnimatedCounter({ value, className }: { value: number; className?: string }) {
+    const [display, setDisplay] = useState(0)
+    useEffect(() => {
+        const controls = animate(0, value, {
+            duration: 1.4,
+            ease: "easeOut",
+            onUpdate: (v) => setDisplay(Math.round(v)),
+        })
+        return controls.stop
+    }, [value])
+    return <span className={className}>{display}</span>
+}
+
 export default function LeaderboardPage() {
     const [leaders, setLeaders] = useState<Profile[]>([])
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
         async function fetchLeaders() {
-            const { data } = await supabase
-                .from('profiles')
-                .select('*')
-                .order('reputation_points', { ascending: false })
-                .limit(20)
+            try {
+                // Safety query: try reputation_points, but fallback if it fails
+                const { data, error } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .order('reputation_points', { ascending: false })
+                    .limit(20)
 
-            if (data) setLeaders(data)
-            setLoading(false)
+                if (error && (error.code === 'PGRST204' || error.message.includes('reputation_points'))) {
+                    const { data: fallback } = await supabase
+                        .from('profiles')
+                        .select('*')
+                        .limit(20)
+                    if (fallback) setLeaders(fallback)
+                } else if (data) {
+                    setLeaders(data)
+                }
+            } catch (err) {
+                console.error("Leaderboard fetch error:", err)
+            } finally {
+                setLoading(false)
+            }
         }
         fetchLeaders()
     }, [])
@@ -108,25 +136,35 @@ export default function LeaderboardPage() {
                         transition={{ delay: 0.1 }}
                         className="order-1 md:order-2"
                     >
-                        <div className="bg-primary text-white border-4 border-primary/20 rounded-[3rem] p-10 text-center relative pt-20 shadow-[0_30px_60px_rgba(var(--primary),0.3)]">
+                        <div className="relative bg-gradient-to-b from-blue-600 to-indigo-700 text-white border-4 border-blue-400/30 rounded-[3rem] p-10 text-center pt-20 shadow-[0_0_60px_rgba(37,99,235,0.45),0_20px_60px_rgba(37,99,235,0.3)] overflow-hidden">
+                            {/* Sparkle background elements */}
+                            <div className="absolute inset-0 opacity-10">
+                                {[...Array(5)].map((_, i) => (
+                                    <div key={i} className="absolute" style={{ top: `${i * 20}%`, left: `${i * 18 + 5}%` }}>
+                                        <Star className="w-6 h-6 fill-current" />
+                                    </div>
+                                ))}
+                            </div>
                             <div className="absolute -top-16 left-1/2 -translate-x-1/2">
                                 <div className="relative">
-                                    <div className="absolute inset-0 bg-white/20 blur-3xl animate-pulse" />
-                                    <Avatar className="w-32 h-32 border-8 border-white shadow-2xl relative">
-                                        <AvatarFallback className="bg-white text-primary font-black text-4xl">
+                                    <div className="absolute inset-0 bg-blue-400/30 blur-2xl animate-pulse rounded-full" />
+                                    <Avatar className="w-32 h-32 border-8 border-white shadow-2xl relative ring-4 ring-blue-300/50">
+                                        <AvatarFallback className="bg-white text-blue-600 font-black text-4xl">
                                             {topThree[0].full_name?.[0]}
                                         </AvatarFallback>
                                     </Avatar>
-                                    <div className="absolute -bottom-4 -right-4 w-14 h-14 rounded-2xl bg-orange-400 flex items-center justify-center shadow-2xl border-4 border-white rotate-12">
+                                    <div className="absolute -bottom-4 -right-4 w-14 h-14 rounded-2xl bg-yellow-400 flex items-center justify-center shadow-2xl border-4 border-white rotate-12">
                                         <Trophy className="w-8 h-8 text-white" />
                                     </div>
                                 </div>
                             </div>
                             <h3 className="text-3xl font-black tracking-tighter">{topThree[0].full_name}</h3>
                             <p className="text-xs font-black uppercase tracking-[0.2em] opacity-80 mt-1">Community Legend</p>
-                            <div className="mt-8 flex items-center justify-center gap-6 bg-white/10 rounded-3xl p-4 backdrop-blur-md">
+                            <div className="mt-8 flex items-center justify-center gap-6 bg-white/15 rounded-3xl p-4 backdrop-blur-md">
                                 <div className="text-center">
-                                    <p className="text-3xl font-black">{topThree[0].reputation_points}</p>
+                                    <p className="text-3xl font-black">
+                                        <AnimatedCounter value={topThree[0].reputation_points ?? 0} />
+                                    </p>
                                     <p className="text-[10px] font-black uppercase opacity-60">Total Reputation</p>
                                 </div>
                             </div>
@@ -194,7 +232,11 @@ export default function LeaderboardPage() {
                             transition={{ delay: index * 0.05 }}
                             className="flex items-center gap-6 p-6 rounded-[2rem] border border-border/20 hover:bg-background/80 transition-all group"
                         >
-                            <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center text-lg font-black shrink-0 group-hover:bg-primary/10 transition-colors">
+                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-sm font-black shrink-0 transition-colors ${
+                                index < 3 ? "bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-[0_4px_12px_rgba(37,99,235,0.3)]" :
+                                index < 7 ? "bg-gradient-to-br from-green-500 to-emerald-600 text-white shadow-[0_4px_12px_rgba(22,163,74,0.3)]" :
+                                "bg-muted text-foreground group-hover:bg-primary/10 group-hover:text-primary"
+                            }`}>
                                 #{index + 4}
                             </div>
                             <div className="flex items-center gap-4 flex-1 min-w-0">
@@ -206,11 +248,10 @@ export default function LeaderboardPage() {
                                     <div className={`inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 rounded-full text-[10px] font-black border ${level.bgColor} ${level.color} ${level.borderColor}`}>
                                         {level.emoji} {level.title}
                                     </div>
-                                    {/* Progress to next level */}
                                     {level.maxPoints !== Infinity && (
                                         <div className="mt-2 flex items-center gap-2">
                                             <div className="flex-1 h-1.5 rounded-full bg-muted/60 overflow-hidden">
-                                                <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${progress}%` }} />
+                                                <div className="h-full bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full transition-all" style={{ width: `${progress}%` }} />
                                             </div>
                                             <span className="text-[9px] font-black text-muted-foreground uppercase">{progress}% → {level.nextTitle}</span>
                                         </div>
@@ -218,7 +259,9 @@ export default function LeaderboardPage() {
                                 </div>
                             </div>
                             <div className="flex flex-col items-end shrink-0">
-                                <p className="text-2xl font-black text-primary tracking-tighter">{leader.reputation_points}</p>
+                                <p className="text-2xl font-black text-primary tracking-tighter">
+                                    <AnimatedCounter value={leader.reputation_points ?? 0} />
+                                </p>
                                 <p className="text-[8px] font-black uppercase tracking-[0.2em] text-muted-foreground">Reputation</p>
                             </div>
                         </motion.div>

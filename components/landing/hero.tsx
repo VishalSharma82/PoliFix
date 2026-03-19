@@ -1,16 +1,19 @@
 "use client"
 
 import Link from "next/link"
-import { motion } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { supabase } from "@/lib/supabase"
-import { ArrowRight, MapPin, CheckCircle2, Users, Zap } from "lucide-react"
+import { ArrowRight, MapPin, CheckCircle2, Users, Zap, TrendingUp as TrendingUpIcon } from "lucide-react"
 
 export function LandingHero() {
   const [particles, setParticles] = useState<any[]>([])
   const [user, setUser] = useState<any>(null)
+  const [wordIndex, setWordIndex] = useState(0)
+
+  const accentWords = ["Fix Cities.", "Build Trust.", "Drive Change."]
 
   useEffect(() => {
     const getUser = async () => {
@@ -19,14 +22,19 @@ export function LandingHero() {
     }
     getUser()
 
-    setParticles([...Array(6)].map((_, i) => ({
+    setParticles([...Array(8)].map((_, i) => ({
       id: i,
-      x: Math.random() * 50 - 25,
+      x: Math.random() * 60 - 30,
       duration: 5 + Math.random() * 5,
       delay: Math.random() * 5,
       left: `${Math.random() * 100}%`,
       top: `${Math.random() * 100}%`,
     })))
+
+    const interval = setInterval(() => {
+      setWordIndex(prev => (prev + 1) % 3)
+    }, 2800)
+    return () => clearInterval(interval)
   }, [])
 
   return (
@@ -70,7 +78,7 @@ export function LandingHero() {
             transition={{ duration: 0.8 }}
             className="flex flex-col gap-8"
           >
-            <Badge variant="outline" className="w-fit gap-2 px-4 py-2 border-primary/20 bg-primary/5 text-primary backdrop-blur-md">
+            <Badge variant="outline" className="w-fit gap-2 px-4 py-2 border-primary/30 bg-gradient-to-r from-blue-500/10 to-indigo-500/10 text-primary backdrop-blur-md shadow-sm">
               <span className="relative flex h-2 w-2">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
@@ -78,11 +86,22 @@ export function LandingHero() {
               Empowering 12,500+ Local Action Takers
             </Badge>
 
-            <div className="flex flex-col gap-6">
-              <h1 className="text-5xl font-extrabold tracking-tight text-foreground sm:text-6xl lg:text-7xl leading-[1.05]">
+            <div className="flex flex-col gap-4">
+              <h1 className="text-5xl font-extrabold tracking-tight text-foreground sm:text-7xl lg:text-8xl leading-[1.02]">
                 Map Problems.{" "}
-                <span className="gradient-text animate-gradient">
-                  Fix Cities.
+                <span className="block relative h-[1.15em] overflow-hidden">
+                  <AnimatePresence mode="wait">
+                    <motion.span
+                      key={wordIndex}
+                      initial={{ y: 40, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      exit={{ y: -40, opacity: 0 }}
+                      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                      className="gradient-text-blue animate-gradient block"
+                    >
+                      {["Fix Cities.", "Build Trust.", "Drive Change."][wordIndex]}
+                    </motion.span>
+                  </AnimatePresence>
                 </span>
               </h1>
               <p className="text-xl text-muted-foreground max-w-xl leading-relaxed">
@@ -91,16 +110,30 @@ export function LandingHero() {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4">
-              <Button size="lg" asChild className="h-14 px-8 text-base font-bold gap-2 group shadow-glow-sm hover:shadow-glow transition-all active:scale-95 rounded-2xl">
+              <Button size="lg" asChild className="h-14 px-8 text-base font-bold gap-2 group bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-[0_4px_20px_rgba(37,99,235,0.4)] hover:shadow-[0_6px_28px_rgba(37,99,235,0.55)] transition-all active:scale-95 rounded-2xl border-0">
                 <Link href={user ? "/dashboard/report" : "/auth?next=/dashboard/report"}>
                   <MapPin className="h-5 w-5" />
                   Report a Problem
                   <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
                 </Link>
               </Button>
-              <Button size="lg" variant="outline" asChild className="h-14 px-8 text-base font-bold backdrop-blur-sm border-primary/20 hover:bg-primary/5 hover:border-primary/40 transition-all rounded-2xl">
+              <Button size="lg" variant="outline" asChild className="h-14 px-8 text-base font-bold backdrop-blur-sm border-blue-500/30 hover:bg-blue-500/5 hover:border-blue-500/50 transition-all rounded-2xl">
                 <Link href={user ? "/dashboard" : "/auth?next=/dashboard"}>Explore Map Live ↗</Link>
               </Button>
+            </div>
+
+            {/* Live Stats Row */}
+            <div className="flex flex-wrap gap-6 pt-2">
+              {[
+                { label: "Reports Filed", value: "14.2K+", color: "text-blue-600" },
+                { label: "Issues Resolved", value: "11.8K+", color: "text-green-600" },
+                { label: "Active Verifiers", value: "3.4K+", color: "text-amber-600" },
+              ].map((s) => (
+                <div key={s.label} className="flex flex-col">
+                  <span className={`text-2xl font-black tracking-tighter ${s.color}`}>{s.value}</span>
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{s.label}</span>
+                </div>
+              ))}
             </div>
 
             {/* Live activity */}

@@ -76,11 +76,33 @@ const statusColors: Record<string, string> = {
 }
 
 // ─── Internal Components ──────────────────────────────────────────────────────
-function MapResizer() {
+function MapController({ center, zoom, onMapChange }: { center: [number, number], zoom: number, onMapChange?: (c: [number, number], z: number) => void }) {
   const map = useMap()
+  
+  // Sync prop changes TO map
+  useEffect(() => {
+    const currentZoom = map.getZoom()
+    const currentCenter = map.getCenter()
+    const centerMatch = Math.abs(currentCenter.lat - center[0]) < 0.0001 && Math.abs(currentCenter.lng - center[1]) < 0.0001
+    
+    if (currentZoom !== zoom || !centerMatch) {
+      map.setView(center, zoom, { animate: true })
+    }
+  }, [map, center, zoom])
+
+  // Sync map interactions BACK to parent
+  useEffect(() => {
+    const onMoveEnd = () => {
+      onMapChange?.([map.getCenter().lat, map.getCenter().lng], map.getZoom())
+    }
+    map.on('moveend', onMoveEnd)
+    return () => { map.off('moveend', onMoveEnd) }
+  }, [map, onMapChange])
+
   useEffect(() => {
     setTimeout(() => { map.invalidateSize() }, 100)
   }, [map])
+  
   return null
 }
 
@@ -163,6 +185,7 @@ interface InteractiveMapProps {
   showHeatmap?: boolean
   predictions?: any[]
   showPredictions?: boolean
+  onMapChange?: (center: [number, number], zoom: number) => void
 }
 
 export function InteractiveMap({
@@ -174,6 +197,7 @@ export function InteractiveMap({
   showHeatmap: externalShowHeatmap,
   predictions = [],
   showPredictions: externalShowPredictions,
+  onMapChange,
 }: InteractiveMapProps) {
   const [internalProblems, setInternalProblems] = useState<Problem[]>([])
   const [heatmapMode, setHeatmapMode] = useState(externalShowHeatmap ?? false)
@@ -216,7 +240,7 @@ export function InteractiveMap({
     <div style={{ height }} className="relative rounded-[2rem] overflow-hidden border shadow-xl z-0">
       <MapContainer center={defaultCenter} zoom={zoom} scrollWheelZoom={true} zoomControl={false} className="h-full w-full">
         <TileLayer key={activeLayer} attribution={currentTile.attribution} url={currentTile.url} />
-        <MapResizer />
+        <MapController center={defaultCenter} zoom={zoom} onMapChange={onMapChange} />
         <ScaleControl />
         <HeatmapLayer problems={displayProblems} visible={heatmapMode} />
         <PredictionLayer predictions={predictions} visible={predictionMode} />

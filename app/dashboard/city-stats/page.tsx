@@ -44,17 +44,25 @@ export default function CityStatsPage() {
   useEffect(() => {
     async function fetchData() {
       const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+      try {
+        const [{ data: allProblems }, { data: weekData }, { data: contributors }] = await Promise.all([
+          supabase.from('problems').select('*'),
+          supabase.from('problems').select('*').gte('created_at', oneWeekAgo),
+          // Safety query: try reputation_points, but fallback if it fails
+          supabase.from('profiles').select('*').order('reputation_points', { ascending: false }).limit(5).then(res => {
+            if (res.error) return supabase.from('profiles').select('*').limit(5)
+            return res
+          }),
+        ])
 
-      const [{ data: allProblems }, { data: weekData }, { data: contributors }] = await Promise.all([
-        supabase.from('problems').select('*'),
-        supabase.from('problems').select('*').gte('created_at', oneWeekAgo),
-        supabase.from('profiles').select('*').order('reputation_points', { ascending: false }).limit(5),
-      ])
-
-      if (allProblems) setProblems(allProblems)
-      if (weekData) setWeekProblems(weekData)
-      if (contributors) setTopContributors(contributors)
-      setLoading(false)
+        if (allProblems) setProblems(allProblems)
+        if (weekData) setWeekProblems(weekData)
+        if (contributors) setTopContributors(contributors)
+      } catch (err) {
+        console.error("Data fetch error:", err)
+      } finally {
+        setLoading(false)
+      }
     }
     fetchData()
   }, [])
@@ -113,14 +121,14 @@ export default function CityStatsPage() {
           { label: 'Most Common Type', value: mostCommonCategory, icon: MapPin, color: 'bg-amber-500', sub: 'top category' },
         ].map((m, i) => (
           <motion.div key={m.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}>
-            <Card className="border-border/40 shadow-xl rounded-[2rem] bg-card/50 backdrop-blur-sm h-full">
+            <Card className="border-border/40 shadow-xl rounded-[2.5rem] glass h-full">
               <CardContent className="p-6">
                 <div className={`w-12 h-12 rounded-xl ${m.color} flex items-center justify-center mb-4 shadow-md`}>
                   <m.icon className="w-6 h-6 text-white" />
                 </div>
-                <p className="text-3xl font-black text-foreground tracking-tight leading-none">{m.value}</p>
-                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mt-1">{m.sub}</p>
-                <p className="text-sm font-bold text-muted-foreground mt-2">{m.label}</p>
+                <p className="text-3xl font-black text-foreground tracking-tight leading-none tracking-tighter italic">{m.value}</p>
+                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mt-1 opacity-60">{m.sub}</p>
+                <p className="text-sm font-black text-foreground mt-2 uppercase italic">{m.label}</p>
               </CardContent>
             </Card>
           </motion.div>
@@ -131,14 +139,14 @@ export default function CityStatsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
         {/* Bar Chart: Issues by Category */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="lg:col-span-3">
-          <Card className="border-border/40 shadow-xl rounded-[2rem] bg-card/50 backdrop-blur-sm h-full">
+          <Card className="border-border/40 shadow-xl rounded-[2.5rem] glass h-full">
             <CardHeader className="p-6 pb-0">
               <CardTitle className="text-xl font-black tracking-tight">Issues by Category</CardTitle>
               <p className="text-sm text-muted-foreground">Total vs. resolved per type</p>
             </CardHeader>
             <CardContent className="p-6">
-              <ResponsiveContainer width="100%" height={280}>
-                <BarChart data={categoryData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <ResponsiveContainer width="100%" height={280} id="bar-chart-container">
+                <BarChart data={categoryData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }} id="category-bar-chart">
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(128,128,128,0.15)" />
                   <XAxis dataKey="name" tick={{ fontSize: 10, fontWeight: 700 }} />
                   <YAxis tick={{ fontSize: 10 }} />
@@ -160,14 +168,14 @@ export default function CityStatsPage() {
 
         {/* Pie Chart: Status Distribution */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="lg:col-span-2">
-          <Card className="border-border/40 shadow-xl rounded-[2rem] bg-card/50 backdrop-blur-sm h-full">
+          <Card className="border-border/40 shadow-xl rounded-[2.5rem] glass h-full">
             <CardHeader className="p-6 pb-0">
               <CardTitle className="text-xl font-black tracking-tight">Status Breakdown</CardTitle>
               <p className="text-sm text-muted-foreground">Pipeline overview</p>
             </CardHeader>
             <CardContent className="p-6">
-              <ResponsiveContainer width="100%" height={260}>
-                <PieChart>
+              <ResponsiveContainer width="100%" height={260} id="pie-chart-container">
+                <PieChart id="status-pie-chart">
                   <Pie
                     data={pieData}
                     cx="50%"
@@ -194,7 +202,7 @@ export default function CityStatsPage() {
 
       {/* Top Contributors */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
-        <Card className="border-border/40 shadow-xl rounded-[2rem] bg-card/50 backdrop-blur-sm">
+        <Card className="border-border/40 shadow-xl rounded-[2.5rem] glass-strong">
           <CardHeader className="p-6 pb-0">
             <div className="flex items-center gap-3">
               <Users className="w-5 h-5 text-primary" />
