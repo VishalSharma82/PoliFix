@@ -38,6 +38,7 @@ export const viewport: Viewport = {
 
 import { SoundProvider } from "@/components/providers/SoundProvider"
 import { ThemeProvider } from "next-themes"
+import { Toaster } from "@/components/ui/sonner"
 
 export default function RootLayout({
   children,
@@ -55,6 +56,7 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange={false}>
           <SoundProvider>
             {children}
+            <Toaster position="top-center" expand={true} richColors />
           </SoundProvider>
         </ThemeProvider>
         <Analytics />

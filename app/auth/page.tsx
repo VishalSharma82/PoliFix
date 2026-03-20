@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/button"
 import { Shield, ArrowLeft, Github, Chrome, Loader2 } from "lucide-react"
 import { LoginForm } from "@/components/auth/login-form"
 import { SignUpForm } from "@/components/auth/sign-up-form"
+import { supabase } from "@/lib/supabase"
+import { toast } from "sonner"
 
 export default function AuthPage() {
     return (
@@ -25,8 +27,25 @@ export default function AuthPage() {
 
 function AuthContent() {
     const [activeTab, setActiveTab] = useState("login")
+    const [loading, setLoading] = useState(false)
     const searchParams = useSearchParams()
     const redirectTo = searchParams.get("next") || "/dashboard"
+
+    const handleSocialLogin = async (provider: 'google' | 'github') => {
+        setLoading(true)
+        try {
+            const { error } = await supabase.auth.signInWithOAuth({
+                provider,
+                options: {
+                    redirectTo: `${window.location.origin}/auth/callback?next=${redirectTo}`,
+                },
+            })
+            if (error) throw error
+        } catch (err: any) {
+            toast.error(err.message || `Failed to sign in with ${provider}`)
+            setLoading(false)
+        }
+    }
 
     return (
         <div className="min-h-screen relative flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 overflow-hidden bg-background">
@@ -117,12 +136,22 @@ function AuthContent() {
                                             <CardContent className="px-8 pb-8 flex flex-col gap-4">
                                                 {/* Social Login */}
                                                 <div className="grid grid-cols-2 gap-4 my-2">
-                                                    <Button variant="outline" className="gap-2 backdrop-blur-sm bg-background/5 border-border/60 hover:bg-background/10 transition-all">
-                                                        <Github className="h-4 w-4" />
+                                                    <Button 
+                                                        variant="outline" 
+                                                        className="gap-2 backdrop-blur-sm bg-background/5 border-border/60 hover:bg-background/10 transition-all"
+                                                        onClick={() => handleSocialLogin('github')}
+                                                        disabled={loading}
+                                                    >
+                                                        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Github className="h-4 w-4" />}
                                                         Github
                                                     </Button>
-                                                    <Button variant="outline" className="gap-2 backdrop-blur-sm bg-background/5 border-border/60 hover:bg-background/10 transition-all">
-                                                        <Chrome className="h-4 w-4" />
+                                                    <Button 
+                                                        variant="outline" 
+                                                        className="gap-2 backdrop-blur-sm bg-background/5 border-border/60 hover:bg-background/10 transition-all"
+                                                        onClick={() => handleSocialLogin('google')}
+                                                        disabled={loading}
+                                                    >
+                                                        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Chrome className="h-4 w-4" />}
                                                         Google
                                                     </Button>
                                                 </div>
