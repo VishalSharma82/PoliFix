@@ -23,6 +23,7 @@ import {
   Loader2,
   AlertCircle,
   X,
+  Trash2,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -66,6 +67,7 @@ export default function ProblemDetailPage() {
   const [activeImage, setActiveImage] = useState(0)
   const [showImageModal, setShowImageModal] = useState(false)
   const [currentUser, setCurrentUser] = useState<any>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
     async function fetchProblemData() {
@@ -221,6 +223,26 @@ export default function ProblemDetailPage() {
     }
   }
 
+  const handleDeleteReport = async () => {
+    if (!window.confirm("Are you sure you want to delete this report? This action cannot be undone.")) return
+    setIsDeleting(true)
+    try {
+      const response = await fetch(`http://localhost:5000/api/v1/problems/${id}`, {
+        method: 'DELETE',
+      })
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || "Failed to delete report")
+      }
+      router.push('/dashboard')
+    } catch (err: any) {
+      console.error(err)
+      alert(`Error: ${err.message}`)
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="h-[80vh] flex flex-col items-center justify-center gap-4">
@@ -362,6 +384,23 @@ export default function ProblemDetailPage() {
                   >
                     <CheckCircle2 className="w-5 h-5 mr-3" />
                     Mark as Resolved
+                  </Button>
+                )}
+
+                {currentUser?.id === problem.reporter_id && (
+                  <Button 
+                    size="lg" 
+                    variant="destructive"
+                    className="h-14 px-8 rounded-2xl font-black text-xs uppercase tracking-widest bg-red-500 hover:bg-red-600 text-white shadow-xl shadow-red-500/30 transition-all border-none"
+                    onClick={handleDeleteReport}
+                    disabled={isDeleting}
+                  >
+                    {isDeleting ? (
+                      <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                    ) : (
+                      <Trash2 className="w-5 h-5 mr-3" />
+                    )}
+                    Delete Report
                   </Button>
                 )}
 

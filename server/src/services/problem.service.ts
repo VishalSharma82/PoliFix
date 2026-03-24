@@ -113,3 +113,29 @@ export const getPrioritizedProblems = async () => {
 
     return prioritized.sort((a, b) => b.ai_priority_score - a.ai_priority_score);
 };
+
+export const deleteProblem = async (id: string) => {
+    console.log(`[Backend] Attempting to delete problem: ${id}`);
+    
+    // Delete related records first to avoid foreign key constraint violations
+    const { error: cError } = await supabase.from('comments').delete().eq('problem_id', id);
+    if (cError) {
+        console.error(`[Backend] Error deleting comments:`, cError);
+        throw cError;
+    }
+    console.log(`[Backend] Comments deleted (or none existed) for problem: ${id}`);
+
+    const { error: vError } = await supabase.from('verifications').delete().eq('problem_id', id);
+    if (vError) {
+        console.error(`[Backend] Error deleting verifications:`, vError);
+        throw vError;
+    }
+    console.log(`[Backend] Verifications deleted (or none existed) for problem: ${id}`);
+    
+    const { error } = await supabase.from('problems').delete().eq('id', id);
+    if (error) {
+        console.error(`[Backend] Error deleting problem record:`, error);
+        throw error;
+    }
+    console.log(`[Backend] Problem ${id} successfully deleted.`);
+};

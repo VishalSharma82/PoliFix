@@ -39,6 +39,8 @@ export const viewport: Viewport = {
 import { SoundProvider } from "@/components/providers/SoundProvider"
 import { ThemeProvider } from "next-themes"
 import { Toaster } from "@/components/ui/sonner"
+import SmoothScroll from "@/components/smooth-scroll"
+
 
 export default function RootLayout({
   children,
@@ -55,9 +57,12 @@ export default function RootLayout({
       <body className="font-sans antialiased">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange={false}>
           <SoundProvider>
-            {children}
+            <SmoothScroll>
+              {children}
+            </SmoothScroll>
             <Toaster position="top-center" expand={true} richColors />
           </SoundProvider>
+
         </ThemeProvider>
         <Analytics />
         {/* PWA Service Worker Registration */}

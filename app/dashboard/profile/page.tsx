@@ -22,6 +22,7 @@ import {
   Loader2,
   Star,
   Zap,
+  Trash2,
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -112,6 +113,29 @@ export default function ProfilePage() {
 
     fetchProfileData()
   }, [router])
+
+  const handleDeleteReport = async (reportId: string, e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!window.confirm("Are you sure you want to delete this report? This action cannot be undone.")) return
+    
+    try {
+      const response = await fetch(`http://localhost:5000/api/v1/problems/${reportId}`, {
+        method: 'DELETE',
+      })
+      if (!response.ok) throw new Error("Failed to delete report")
+      
+      setMyReports(prev => prev.filter(r => r.id !== reportId))
+      setStats(prev => ({ 
+        ...prev, 
+        reports: prev.reports - 1,
+        resolved: myReports.find(r => r.id === reportId)?.status === 'resolved' ? prev.resolved - 1 : prev.resolved
+      }))
+    } catch (err) {
+      console.error(err)
+      alert("Failed to delete report. Please try again.")
+    }
+  }
 
   if (loading) {
     return (
@@ -309,7 +333,17 @@ export default function ProfilePage() {
                       </span>
                     </div>
                   </div>
-                  <Eye className="w-6 h-6 text-primary opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all shrink-0 hidden sm:block" />
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="w-10 h-10 rounded-xl text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all shrink-0"
+                      onClick={(e) => handleDeleteReport(report.id, e)}
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </Button>
+                    <Eye className="w-6 h-6 text-primary opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all shrink-0 hidden sm:block" />
+                  </div>
                 </Link>
               ))}
               {myReports.length === 0 && (

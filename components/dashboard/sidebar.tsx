@@ -20,7 +20,8 @@ import {
   BarChart2,
   Shield,
   X,
-  Zap,
+  FolderOpen,
+  ClipboardList,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -31,6 +32,7 @@ const mainNavItems = [
   { icon: LayoutDashboard, label: "Dashboard",       href: "/dashboard",            color: "text-indigo-500",   bg: "bg-indigo-500/10",   glow: "shadow-indigo-500/30" },
   { icon: Map,             label: "Map View",         href: "/dashboard/map",         color: "text-cyan-500",    bg: "bg-cyan-500/10",    glow: "shadow-cyan-500/30" },
   { icon: PlusCircle,      label: "Report Problem",   href: "/dashboard/report",      color: "text-rose-500",    bg: "bg-rose-500/10",    glow: "shadow-rose-500/30" },
+  { icon: ClipboardList,   label: "My Reports",       href: "/dashboard/my-reports",  color: "text-emerald-500", bg: "bg-emerald-500/10", glow: "shadow-emerald-500/30" },
   { icon: Activity,        label: "Activity Feed",    href: "/dashboard/activity",    color: "text-amber-500",   bg: "bg-amber-500/10",   glow: "shadow-amber-500/30" },
   { icon: Bell,            label: "Notifications",    href: "/dashboard/notifications",color: "text-violet-500", bg: "bg-violet-500/10",  glow: "shadow-violet-500/30" },
   { icon: Trophy,          label: "Leaderboard",      href: "/dashboard/leaderboard", color: "text-yellow-500",  bg: "bg-yellow-500/10",  glow: "shadow-yellow-500/30" },
