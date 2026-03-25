@@ -77,8 +77,8 @@ export default function MapPage() {
       setLoading(true)
       try {
         const [prioRes, predRes] = await Promise.all([
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/problems/prioritized`),
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/ai/predict`)
+          fetch(`/api/v1/problems/prioritized`),
+          fetch(`/api/v1/ai/predict`)
         ])
         
         const { data: prioData } = await prioRes.json()

@@ -227,7 +227,7 @@ export default function ProblemDetailPage() {
     if (!window.confirm("Are you sure you want to delete this report? This action cannot be undone.")) return
     setIsDeleting(true)
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/problems/${id}`, {
+      const response = await fetch(`/api/v1/problems/${id}`, {
         method: 'DELETE',
       })
       if (!response.ok) {
