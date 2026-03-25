@@ -1,5 +1,10 @@
 {
   "version": 2,
+  "functions": {
+    "server/index.ts": {
+      "runtime": "@vercel/node"
+    }
+  },
   "rewrites": [
     {
       "source": "/api/v1/:path*",
