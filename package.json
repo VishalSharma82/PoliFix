@@ -79,6 +79,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4.2.0",
     "@types/node": "^22",
+    "@vercel/node": "^3.2.24",
     "@types/express": "^4.17.21",
     "@types/cors": "^2.8.17",
     "@types/morgan": "^1.9.9",
