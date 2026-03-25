@@ -15,6 +15,9 @@ export const useSound = () => {
   const audioRefs = useRef<{ [key in SoundType]?: HTMLAudioElement }>({});
 
   const play = useCallback((type: SoundType, volume: number = 0.5) => {
+    // TEMPORARY DISABLE TO STOP CONSOLE ERRORS ON LIVE SITE
+    return;
+
     // Check if sound enabled (this will be integrated with SoundProvider later)
     const isMuted = typeof window !== 'undefined' ? localStorage.getItem('app-sounds-muted') === 'true' : false;
     if (isMuted) return;

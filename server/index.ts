@@ -10,6 +10,13 @@ import aiRoutes from './src/routes/ai.routes';
 
 dotenv.config();
 
+console.log('--- BACKEND STARTING ---');
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('VERCEL:', process.env.VERCEL);
+console.log('SUPABASE_URL:', process.env.SUPABASE_URL ? 'PRESENT' : 'MISSING');
+console.log('SUPABASE_SERVICE_ROLE_KEY:', process.env.SUPABASE_SERVICE_ROLE_KEY ? 'PRESENT' : 'MISSING');
+console.log('------------------------');
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 
