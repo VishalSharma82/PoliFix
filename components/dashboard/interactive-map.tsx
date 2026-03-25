@@ -85,7 +85,7 @@ function MapController({ center, zoom, onMapChange }: { center: [number, number]
     const currentCenter = map.getCenter()
     const centerMatch = Math.abs(currentCenter.lat - center[0]) < 0.0001 && Math.abs(currentCenter.lng - center[1]) < 0.0001
     
-    if (currentZoom !== zoom || !centerMatch) {
+    if ((currentZoom !== zoom || !centerMatch) && typeof center[0] === 'number' && typeof center[1] === 'number') {
       map.setView(center, zoom, { animate: true })
     }
   }, [map, center, zoom])
@@ -245,11 +245,13 @@ export function InteractiveMap({
         <HeatmapLayer problems={displayProblems} visible={heatmapMode} />
         <PredictionLayer predictions={predictions} visible={predictionMode} />
 
-        {!heatmapMode && !predictionMode && displayProblems.map((problem) => (
-          <Marker key={problem.id} position={[problem.lat, problem.lng]} icon={getIcon(problem)} eventHandlers={{
-            click: () => onMarkerClick?.(problem),
-          }}>
-            <Popup className="rounded-2xl">
+        {!heatmapMode && !predictionMode && displayProblems
+          .filter(p => typeof p.lat === 'number' && typeof p.lng === 'number' && !isNaN(p.lat) && !isNaN(p.lng))
+          .map((problem) => (
+            <Marker key={problem.id} position={[problem.lat, problem.lng]} icon={getIcon(problem)} eventHandlers={{
+              click: () => onMarkerClick?.(problem),
+            }}>
+              <Popup className="rounded-2xl">
               <div className="p-2 min-w-[160px]">
                 <h3 className="font-bold text-sm mb-1">{problem.title}</h3>
                 <p className="text-[10px] text-muted-foreground uppercase opacity-70 mb-2">{problem.category}</p>
