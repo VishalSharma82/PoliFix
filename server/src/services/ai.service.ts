@@ -3,7 +3,13 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
+const geminiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_KEY || "";
+
+if (!geminiKey) {
+    console.error('CRITICAL ERROR: GEMINI_API_KEY is missing in environment variables. AI features will fail.');
+}
+
+const genAI = new GoogleGenerativeAI(geminiKey || "placeholder_key");
 
 // gemini-2.0-flash: confirmed working model for this API key
 const MODEL_NAME = "gemini-2.0-flash";

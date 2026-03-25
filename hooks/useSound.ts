@@ -3,10 +3,10 @@
 import { useCallback, useRef } from "react";
 
 export const SOUNDS = {
-  click: "https://www.soundjay.com/buttons/sounds/button-16.mp3",
-  slide: "https://www.soundjay.com/buttons/sounds/button-17.mp3",
-  success: "https://www.soundjay.com/buttons/sounds/button-3.mp3",
-  error: "https://www.soundjay.com/buttons/sounds/button-10.mp3",
+  click: "/sounds/click.mp3",
+  slide: "/sounds/slide.mp3",
+  success: "/sounds/success.mp3",
+  error: "/sounds/error.mp3",
 } as const;
 
 export type SoundType = keyof typeof SOUNDS;

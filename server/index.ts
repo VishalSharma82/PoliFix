@@ -33,6 +33,20 @@ app.use('/api/', apiLimiter);
 app.use('/api/v1/problems', problemRoutes);
 app.use('/api/v1/ai', aiRoutes);
 
+// Health and Diagnostics
+app.get('/api/v1/health', (req, res) => {
+    res.json({
+        status: 'ok',
+        timestamp: new Date().toISOString(),
+        environment: {
+            SUPABASE_URL: !!process.env.SUPABASE_URL ? 'present' : 'missing',
+            SUPABASE_SERVICE_ROLE_KEY: !!process.env.SUPABASE_SERVICE_ROLE_KEY ? 'present' : 'missing',
+            GEMINI_API_KEY: !!(process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_KEY) ? 'present' : 'missing',
+            NODE_ENV: process.env.NODE_ENV,
+        }
+    });
+});
+
 // Public API endpoints
 app.get('/api/problems', async (req, res) => {
     res.json({ message: 'Use /api/v1/problems for full problem data' });
