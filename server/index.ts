@@ -65,7 +65,8 @@ app.get('/', (req, res) => {
 });
 
 // Change: Wrap this in a conditional for Vercel
-if (process.env.NODE_ENV !== 'production' || process.env.VERCEL_DEV) {
+// Vercel handles the listening; manual app.listen() causes 500 errors on deployment
+if (!process.env.VERCEL && (process.env.NODE_ENV !== 'production' || process.env.VERCEL_DEV)) {
     app.listen(PORT, () => {
         console.log(`Server running on port ${PORT}`);
     });

@@ -1,5 +1,5 @@
 # Script to download common UI sounds for PoliFix
-$soundsDir = Join-Path $PSScriptRoot "..", "public", "sounds"
+$soundsDir = [System.IO.Path]::GetFullPath([System.IO.Path]::Combine($PSScriptRoot, "..", "public", "sounds"))
 
 if (!(Test-Path $soundsDir)) {
     New-Item -ItemType Directory -Path $soundsDir -Force
