@@ -34,10 +34,11 @@ function AuthContent() {
     const handleSocialLogin = async (provider: 'google' | 'github') => {
         setLoading(true)
         try {
+            const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin
             const { error } = await supabase.auth.signInWithOAuth({
                 provider,
                 options: {
-                    redirectTo: `${window.location.origin}/auth/callback?next=${redirectTo}`,
+                    redirectTo: `${siteUrl}/auth/callback?next=${redirectTo}`,
                 },
             })
             if (error) throw error

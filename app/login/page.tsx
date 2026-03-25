@@ -46,10 +46,11 @@ export default function LoginPage() {
     setLoading(true)
     setError(null)
     try {
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
-          redirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
+          redirectTo: `${siteUrl}/auth/callback?next=/dashboard`,
         },
       })
       if (error) throw error
