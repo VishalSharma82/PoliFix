@@ -71,7 +71,7 @@ export default function MyReportsPage() {
     
     setIsDeleting(reportId)
     try {
-      const response = await fetch(`http://localhost:5000/api/v1/problems/${reportId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/problems/${reportId}`, {
         method: 'DELETE',
       })
       if (!response.ok) {

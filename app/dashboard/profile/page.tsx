@@ -120,7 +120,7 @@ export default function ProfilePage() {
     if (!window.confirm("Are you sure you want to delete this report? This action cannot be undone.")) return
     
     try {
-      const response = await fetch(`http://localhost:5000/api/v1/problems/${reportId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/problems/${reportId}`, {
         method: 'DELETE',
       })
       if (!response.ok) throw new Error("Failed to delete report")

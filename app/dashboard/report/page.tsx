@@ -156,7 +156,7 @@ export default function ReportPage() {
 
       const base64Image = await fileToBase64(file);
       
-      const response = await fetch('http://localhost:5000/api/v1/ai/analyze', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/ai/analyze`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -274,7 +274,7 @@ export default function ReportPage() {
       if (data && data.length > 0) {
         // Now call AI to check similarity more deeply
         try {
-          const aiResponse = await fetch('http://localhost:5000/api/v1/ai/check-duplicate', {
+          const aiResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/ai/check-duplicate`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -341,7 +341,7 @@ export default function ReportPage() {
       }
 
       // 2. Insert via backend server (uses service role key — bypasses RLS completely)
-      const response = await fetch('http://localhost:5000/api/v1/problems', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/problems`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
