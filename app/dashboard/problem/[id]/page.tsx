@@ -33,6 +33,7 @@ import { Progress } from "@/components/ui/progress"
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
 import { supabase } from "@/lib/supabase"
 import { Database } from "@/types/database"
+import { updateReputation, createNotification } from "@/lib/reputation"
 import dynamic from "next/dynamic"
 
 const ProblemMap = dynamic(
@@ -51,9 +52,9 @@ const statusColors: Record<string, { bg: string; text: string; icon: any }> = {
   in_progress: { bg: "bg-amber-500/10", text: "text-amber-600", icon: Clock },
   resolved: { bg: "bg-green-500/10", text: "text-green-600", icon: CheckCircle2 },
 }
-
 export default function ProblemDetailPage() {
-  const { id } = useParams()
+  const params = useParams()
+  const id = params?.id as string
   const router = useRouter()
   const [problem, setProblem] = useState<Problem | null>(null)
   const [reporter, setReporter] = useState<Profile | null>(null)
@@ -130,6 +131,17 @@ export default function ProblemDetailPage() {
         .eq('id', id as string)
       
       if (error) throw error
+      
+      // Update reputation for the reporter (+20 pts)
+      if (problem.reporter_id) {
+        await updateReputation(problem.reporter_id, 'resolve')
+        await createNotification(
+          problem.reporter_id, 
+          'resolved', 
+          `Great news! Your report "${problem.title}" has been marked as resolved.`
+        )
+      }
+      
       setProblem(p => p ? { ...p, status: 'resolved' } : null)
     } catch (err) {
       console.error(err)
@@ -169,27 +181,104 @@ export default function ProblemDetailPage() {
 
       if (hasVerified) {
         // Unverify
-        await supabase
+        const { error: deleteError } = await supabase
           .from('verifications')
           .delete()
           .eq('problem_id', id as string)
           .eq('user_id', user.id)
 
-        setProblem(p => p ? { ...p, confirmed_count: Math.max(0, p.confirmed_count - 1) } : null)
+        if (deleteError) throw deleteError
+
+        // Update confirmed_count in problems table
+        const newCount = Math.max(0, (problem?.confirmed_count || 0) - 1)
+        await supabase
+          .from('problems')
+          .update({ confirmed_count: newCount })
+          .eq('id', id as string)
+
+        setProblem(p => p ? { ...p, confirmed_count: newCount } : null)
         setHasVerified(false)
       } else {
         // Verify
-        await supabase
+        const { error: insertError } = await supabase
           .from('verifications')
           .insert({ problem_id: id as string, user_id: user.id })
 
-        setProblem(p => p ? { ...p, confirmed_count: p.confirmed_count + 1 } : null)
+        if (insertError) {
+          // Check for unique violation (error code 23505)
+          if ((insertError as any).code === '23505') {
+            setHasVerified(true)
+            return
+          }
+          throw insertError
+        }
+
+        // Update confirmed_count in problems table
+        const newCount = (problem?.confirmed_count || 0) + 1
+        const { error: updateError } = await supabase
+          .from('problems')
+          .update({ confirmed_count: newCount })
+          .eq('id', id as string)
+        
+        if (updateError) throw updateError
+
+        // Update reputation for the verifier (+5 pts)
+        await updateReputation(user.id, 'verify')
+
+        // Notify the reporter
+        if (problem?.reporter_id && problem.reporter_id !== user.id) {
+            await createNotification(
+                problem.reporter_id,
+                'verified',
+                `Someone verified your report: ${problem.title}`
+            )
+        }
+
+        setProblem(p => p ? { ...p, confirmed_count: newCount } : null)
         setHasVerified(true)
       }
     } catch (err) {
       console.error(err)
     } finally {
       setIsVerifying(false)
+    }
+  }
+
+  const handleLikeComment = async (commentId: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        router.push('/auth')
+        return
+      }
+
+      // Insert into comment_likes
+      const { error: likeError } = await supabase
+        .from('comment_likes')
+        .insert({ comment_id: commentId, user_id: user.id })
+
+      if (likeError) {
+        // Handle unique violation (already liked)
+        if ((likeError as any).code === '23505') return
+        throw likeError
+      }
+
+      // Increment likes_count in comments table
+      const comment = commentsList.find(c => c.id === commentId)
+      const newLikesCount = (comment?.likes_count || 0) + 1
+      
+      await supabase
+        .from('comments')
+        .update({ likes_count: newLikesCount })
+        .eq('id', commentId)
+
+      // Update local state
+      setCommentsList(prev => prev.map(c => 
+        c.id === commentId ? { ...c, likes_count: newLikesCount } : c
+      ))
+
+    } catch (err) {
+      console.error(err)
     }
   }
 
@@ -474,9 +563,12 @@ export default function ProblemDetailPage() {
                         </span>
                       </div>
                       <p className="text-foreground/80 leading-relaxed font-medium">{comment.content}</p>
-                      <button className="flex items-center gap-2 mt-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors">
+                      <button 
+                        onClick={() => handleLikeComment(comment.id)}
+                        className="flex items-center gap-2 mt-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors"
+                      >
                         <Heart className="w-4 h-4" />
-                        Helpful update
+                        Helpful update ({comment.likes_count || 0})
                       </button>
                     </div>
                   </motion.div>

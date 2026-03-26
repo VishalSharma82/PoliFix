@@ -32,6 +32,7 @@ import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
 import Link from "next/link"
 import { supabase } from "@/lib/supabase"
 import { Database } from "@/types/database"
+import { updateReputation } from "@/lib/reputation"
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from "react-leaflet"
 import L from "leaflet"
 
@@ -362,6 +363,9 @@ export default function ReportPage() {
         const errData = await response.json()
         throw new Error(errData.error || 'Failed to submit report')
       }
+
+      // Update reputation for reporting (+10 pts)
+      await updateReputation(user.id, 'report')
 
       setSubmitted(true)
     } catch (err: any) {

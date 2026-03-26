@@ -117,6 +117,7 @@ export interface Database {
                     problem_id: string
                     user_id: string
                     content: string
+                    likes_count: number
                     created_at: string
                 }
                 Insert: {
@@ -124,6 +125,7 @@ export interface Database {
                     problem_id: string
                     user_id: string
                     content: string
+                    likes_count?: number
                     created_at?: string
                 }
                 Update: {
@@ -131,6 +133,7 @@ export interface Database {
                     problem_id?: string
                     user_id?: string
                     content?: string
+                    likes_count?: number
                     created_at?: string
                 }
                 Relationships: any[]
@@ -158,6 +161,27 @@ export interface Database {
                     type?: string
                     message?: string
                     is_read?: boolean
+                    created_at?: string
+                }
+                Relationships: any[]
+            }
+            comment_likes: {
+                Row: {
+                    id: string
+                    comment_id: string
+                    user_id: string
+                    created_at: string
+                }
+                Insert: {
+                    id?: string
+                    comment_id: string
+                    user_id: string
+                    created_at?: string
+                }
+                Update: {
+                    id?: string
+                    comment_id?: string
+                    user_id?: string
                     created_at?: string
                 }
                 Relationships: any[]

@@ -78,7 +78,10 @@ export default function ActivityPage() {
           combined.push({
             id: `report-${r.id}`,
             type: r.status === 'resolved' ? 'resolve' : 'report',
-            user: { name: r.profiles?.full_name || 'Citizen', initials: r.profiles?.full_name?.[0] || 'C' },
+            user: { 
+              name: (Array.isArray(r.profiles) ? r.profiles[0] : r.profiles)?.full_name || 'Citizen', 
+              initials: (Array.isArray(r.profiles) ? r.profiles[0] : r.profiles)?.full_name?.[0] || 'C' 
+            },
             action: r.status === 'resolved' ? "resolved the issue" : "reported a new problem",
             problem: { id: r.id, title: r.title },
             time: new Date(r.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -92,9 +95,15 @@ export default function ActivityPage() {
           combined.push({
             id: `verify-${v.id}`,
             type: "verify",
-            user: { name: v.profiles?.full_name || 'Citizen', initials: v.profiles?.full_name?.[0] || 'C' },
+            user: { 
+              name: (Array.isArray(v.profiles) ? v.profiles[0] : v.profiles)?.full_name || 'Citizen', 
+              initials: (Array.isArray(v.profiles) ? v.profiles[0] : v.profiles)?.full_name?.[0] || 'C' 
+            },
             action: "verified",
-            problem: { id: v.problems?.id || '', title: v.problems?.title || '' },
+            problem: { 
+              id: (Array.isArray(v.problems) ? v.problems[0] : v.problems)?.id || '', 
+              title: (Array.isArray(v.problems) ? v.problems[0] : v.problems)?.title || '' 
+            },
             time: new Date(v.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             timestamp: v.created_at,
             icon: ThumbsUp,
@@ -106,9 +115,15 @@ export default function ActivityPage() {
           combined.push({
             id: `comment-${c.id}`,
             type: "comment",
-            user: { name: c.profiles?.full_name || 'Citizen', initials: c.profiles?.full_name?.[0] || 'C' },
+            user: { 
+              name: (Array.isArray(c.profiles) ? c.profiles[0] : c.profiles)?.full_name || 'Citizen', 
+              initials: (Array.isArray(c.profiles) ? c.profiles[0] : c.profiles)?.full_name?.[0] || 'C' 
+            },
             action: "commented on",
-            problem: { id: c.problems?.id || '', title: c.problems?.title || '' },
+            problem: { 
+              id: (Array.isArray(c.problems) ? c.problems[0] : c.problems)?.id || '', 
+              title: (Array.isArray(c.problems) ? c.problems[0] : c.problems)?.title || '' 
+            },
             comment: c.content,
             time: new Date(c.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             timestamp: c.created_at,

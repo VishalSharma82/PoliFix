@@ -3,12 +3,16 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
+import path from 'path';
 import rateLimit from 'express-rate-limit';
 
 import problemRoutes from './src/routes/problem.routes';
 import aiRoutes from './src/routes/ai.routes';
 
-dotenv.config();
+dotenv.config({ path: path.resolve(process.cwd(), 'server', '.env') });
+if (!process.env.SUPABASE_URL) {
+    dotenv.config(); // Fallback to root .env
+}
 
 console.log('--- BACKEND STARTING ---');
 console.log('NODE_ENV:', process.env.NODE_ENV);
@@ -71,9 +75,13 @@ app.get('/', (req, res) => {
     });
 });
 
-// Change: Wrap this in a conditional for Vercel
+// Change: Wrap this in a conditional for Vercel and separate processes
 // Vercel handles the listening; manual app.listen() causes 500 errors on deployment
-if (!process.env.VERCEL && (process.env.NODE_ENV !== 'production' || process.env.VERCEL_DEV)) {
+// Also prevent listening if this file is imported (e.g. by Next.js API routes)
+const isMainModule = typeof require !== 'undefined' && require.main === module;
+const isDirectRun = process.env.RUN_SERVER === 'true' || isMainModule;
+
+if (isDirectRun && !process.env.VERCEL && (process.env.NODE_ENV !== 'production' || process.env.VERCEL_DEV)) {
     app.listen(PORT, () => {
         console.log(`Server running on port ${PORT}`);
     });
