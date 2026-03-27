@@ -25,9 +25,9 @@ export function LandingNav() {
   }, [])
 
   const navLinks = [
-    { href: "#features", label: "Features" },
-    { href: "#how-it-works", label: "How It Works" },
-    { href: "#impact", label: "Impact" },
+    { href: "/#features", label: "Features" },
+    { href: "/#how-it-works", label: "How It Works" },
+    { href: "/#impact", label: "Impact" },
     { href: "/dashboard", label: "Dashboard" },
   ]
 

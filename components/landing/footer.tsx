@@ -3,8 +3,8 @@ import { MapPin, Twitter, Github, Linkedin } from "lucide-react"
 
 const footerLinks = {
   product: [
-    { label: "Features", href: "#features" },
-    { label: "How It Works", href: "#how-it-works" },
+    { label: "Features", href: "/#features" },
+    { label: "How It Works", href: "/#how-it-works" },
     { label: "Dashboard", href: "/dashboard" },
     { label: "Report Problem", href: "/report" },
   ],
@@ -22,9 +22,9 @@ const footerLinks = {
 }
 
 const socialLinks = [
-  { icon: Twitter, href: "https://twitter.com", label: "Twitter" },
-  { icon: Github, href: "https://github.com", label: "GitHub" },
-  { icon: Linkedin, href: "https://linkedin.com", label: "LinkedIn" },
+  // { icon: Twitter, href: "https://twitter.com", label: "Twitter" },
+  { icon: Github, href: "https://github.com/VishalSharma82", label: "GitHub" },
+  { icon: Linkedin, href: "https://www.linkedin.com/in/vishal-sharma-b46a14252", label: "LinkedIn" },
 ]
 
 export function LandingFooter() {

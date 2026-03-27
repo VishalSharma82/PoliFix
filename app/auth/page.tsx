@@ -29,7 +29,7 @@ function AuthContent() {
     const [activeTab, setActiveTab] = useState("login")
     const [loading, setLoading] = useState(false)
     const searchParams = useSearchParams()
-    const redirectTo = searchParams.get("next") || "/dashboard"
+    const redirectTo = searchParams?.get("next") || "/dashboard"
 
     const handleSocialLogin = async (provider: 'google' | 'github') => {
         setLoading(true)
