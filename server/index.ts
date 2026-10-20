@@ -9,9 +9,19 @@ import rateLimit from 'express-rate-limit';
 import problemRoutes from './src/routes/problem.routes';
 import aiRoutes from './src/routes/ai.routes';
 
+// Load environment variables from all common locations
+dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
+dotenv.config({ path: path.resolve(process.cwd(), '..', '.env.local') });
+dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+dotenv.config({ path: path.resolve(process.cwd(), '..', '.env') });
 dotenv.config({ path: path.resolve(process.cwd(), 'server', '.env') });
-if (!process.env.SUPABASE_URL) {
-    dotenv.config(); // Fallback to root .env
+
+// Fallback server env vars to NEXT_PUBLIC versions if not explicitly set
+if (!process.env.SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_URL) {
+    process.env.SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+}
+if (!process.env.SUPABASE_SERVICE_ROLE_KEY && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    process.env.SUPABASE_SERVICE_ROLE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 }
 
 console.log('--- BACKEND STARTING ---');
@@ -88,4 +98,3 @@ if (isDirectRun && !process.env.VERCEL && (process.env.NODE_ENV !== 'production'
 }
 
 export default app;
-

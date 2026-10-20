@@ -33,16 +33,22 @@ export const SoundProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const play = useCallback((type: SoundType, volume: number = 0.5) => {
     if (isMuted) return;
 
-    if (!audioCache.current[type]) {
-      audioCache.current[type] = new Audio(SOUNDS[type]);
-    }
+    try {
+      if (!audioCache.current[type]) {
+        audioCache.current[type] = new Audio(SOUNDS[type]);
+      }
 
-    const audio = audioCache.current[type]!;
-    audio.volume = volume;
-    audio.currentTime = 0;
-    audio.play().catch((err) => {
-      console.warn(`Failed to play sound: ${type}`, err);
-    });
+      const audio = audioCache.current[type];
+      if (audio) {
+        audio.volume = volume;
+        audio.currentTime = 0;
+        audio.play().catch(() => {
+          // Gracefully ignore missing audio files or browser autoplay restrictions
+        });
+      }
+    } catch {
+      // Gracefully ignore audio setup errors
+    }
   }, [isMuted]);
 
   const toggleMute = () => setIsMuted((prev) => !prev);
