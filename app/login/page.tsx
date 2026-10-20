@@ -34,6 +34,7 @@ export default function LoginPage() {
 
       if (data.user) {
         router.push("/dashboard")
+        router.refresh()
       }
     } catch (err: any) {
       setError(err.message || "Invalid login credentials")

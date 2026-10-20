@@ -12,7 +12,7 @@ import Link from "next/link"
 
 import { useSoundContext } from "@/components/providers/SoundProvider"
 
-export function SignUpForm({ redirectTo = "/dashboard" }: { redirectTo?: string }) {
+export function SignUpForm({ redirectTo = "/dashboard/profile/setup" }: { redirectTo?: string }) {
     const router = useRouter()
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
@@ -41,6 +41,17 @@ export function SignUpForm({ redirectTo = "/dashboard" }: { redirectTo?: string 
             if (error) throw error
 
             play('success')
+
+            if (data?.session || (data?.user && !data.user.identities?.length)) {
+                router.push(redirectTo || '/dashboard')
+                router.refresh()
+                return
+            } else if (data?.session) {
+                router.push(redirectTo || '/dashboard')
+                router.refresh()
+                return
+            }
+
             setSuccess(true)
         } catch (err: any) {
             play('error')

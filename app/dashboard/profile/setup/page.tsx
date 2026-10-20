@@ -163,6 +163,17 @@ export default function ProfileSetupPage() {
                                     </>
                                 )}
                             </Button>
+
+                            <div className="text-center mt-2">
+                                <Button 
+                                    variant="ghost" 
+                                    type="button" 
+                                    onClick={() => router.push('/dashboard')} 
+                                    className="text-muted-foreground hover:text-foreground text-sm font-semibold rounded-xl"
+                                >
+                                    Skip for now →
+                                </Button>
+                            </div>
                         </form>
                     </CardContent>
                 </Card>

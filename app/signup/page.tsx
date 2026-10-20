@@ -52,6 +52,7 @@ export default function SignupPage() {
 
       if (data.user) {
         router.push("/dashboard/profile/setup")
+        router.refresh()
       }
     } catch (err: any) {
       setError(err.message || "An error occurred during signup")
@@ -68,7 +69,7 @@ export default function SignupPage() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
-          redirectTo: `${siteUrl}/auth/callback?next=/dashboard`,
+          redirectTo: `${siteUrl}/auth/callback?next=/dashboard/profile/setup`,
         },
       })
       if (error) throw error

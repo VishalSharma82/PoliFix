@@ -14,14 +14,25 @@ export function LandingNav() {
 
   useEffect(() => {
     const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      setUser(user)
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        setUser(user)
+      } catch {
+        setUser(null)
+      }
     }
     getUser()
 
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+    })
+
     const handleScroll = () => setScrolled(window.scrollY > 20)
     window.addEventListener('scroll', handleScroll, { passive: true })
-    return () => window.removeEventListener('scroll', handleScroll)
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
+      subscription.unsubscribe()
+    }
   }, [])
 
   const navLinks = [
@@ -60,7 +71,7 @@ export function LandingNav() {
           ))}
         </div>
 
-        {/* CTA Buttons */}
+        {/* CTA Button - Single unified button */}
         <div className="hidden items-center gap-2 lg:flex">
           {user ? (
             <Button asChild className="shadow-glow-sm hover:shadow-glow transition-all gap-2 rounded-xl">
@@ -70,14 +81,9 @@ export function LandingNav() {
               </Link>
             </Button>
           ) : (
-            <>
-              <Button variant="ghost" asChild className="rounded-xl font-semibold">
-                <Link href="/auth?next=/dashboard">Log in</Link>
-              </Button>
-              <Button asChild className="shadow-glow-sm hover:shadow-glow transition-all rounded-xl font-bold">
-                <Link href="/auth?next=/dashboard/profile/setup">Get Started Free →</Link>
-              </Button>
-            </>
+            <Button asChild className="shadow-glow-sm hover:shadow-glow transition-all rounded-xl font-bold">
+              <Link href="/auth?next=/dashboard">Get Started →</Link>
+            </Button>
           )}
         </div>
 
@@ -137,14 +143,11 @@ export function LandingNav() {
                     </Link>
                   </Button>
                 ) : (
-                  <>
-                    <Button variant="outline" asChild className="w-full rounded-xl">
-                      <Link href="/auth?next=/dashboard" onClick={() => setMobileMenuOpen(false)}>Log in</Link>
-                    </Button>
-                    <Button asChild className="w-full rounded-xl font-bold">
-                      <Link href="/auth?next=/dashboard/profile/setup" onClick={() => setMobileMenuOpen(false)}>Get Started Free →</Link>
-                    </Button>
-                  </>
+                  <Button asChild className="w-full rounded-xl font-bold">
+                    <Link href="/auth?next=/dashboard" onClick={() => setMobileMenuOpen(false)}>
+                      Get Started →
+                    </Link>
+                  </Button>
                 )}
               </div>
             </div>

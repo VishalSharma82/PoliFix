@@ -29,16 +29,18 @@ function AuthContent() {
     const [activeTab, setActiveTab] = useState("login")
     const [loading, setLoading] = useState(false)
     const searchParams = useSearchParams()
-    const redirectTo = searchParams?.get("next") || "/dashboard"
+    const rawNext = searchParams?.get("next")
+    const redirectTo = (rawNext && rawNext !== '/' && !rawNext.includes('profile/setup')) ? rawNext : "/dashboard"
 
     const handleSocialLogin = async (provider: 'google' | 'github') => {
         setLoading(true)
         try {
             const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin
+            const targetRedirect = activeTab === "signup" ? "/dashboard/profile/setup" : "/dashboard"
             const { error } = await supabase.auth.signInWithOAuth({
                 provider,
                 options: {
-                    redirectTo: `${siteUrl}/auth/callback?next=${redirectTo}`,
+                    redirectTo: `${siteUrl}/auth/callback?next=${targetRedirect}`,
                 },
             })
             if (error) throw error
@@ -166,7 +168,7 @@ function AuthContent() {
                                                     </div>
                                                 </div>
 
-                                                {activeTab === "login" ? <LoginForm redirectTo={redirectTo} /> : <SignUpForm redirectTo={redirectTo} />}
+                                                {activeTab === "login" ? <LoginForm redirectTo="/dashboard" /> : <SignUpForm redirectTo="/dashboard/profile/setup" />}
                                             </CardContent>
                                         </motion.div>
                                     </TabsContent>
